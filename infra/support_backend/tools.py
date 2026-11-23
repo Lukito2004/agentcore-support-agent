@@ -1,40 +1,7 @@
-from pathlib import Path
-
-from aws_cdk import Duration, RemovalPolicy
 from aws_cdk import aws_dynamodb as dynamodb
-from aws_cdk import aws_lambda as lambda_
-from aws_cdk import aws_logs as logs
 from constructs import Construct
 
-BACKEND_DIR = Path(__file__).resolve().parents[2] / "backend"
-# Only code goes into the Lambda package.
-ASSET_EXCLUDES = ["tool_schemas", "seed", "**/__pycache__", "**/*.pyc"]
-
-
-def _tool_function(
-    scope: Construct, description: str, handler: str, environment: dict[str, str]
-) -> lambda_.Function:
-    """A tool Lambda with the shared runtime settings; each one gets its own IAM role."""
-    log_group = logs.LogGroup(
-        scope,
-        "Logs",
-        retention=logs.RetentionDays.TWO_WEEKS,
-        removal_policy=RemovalPolicy.DESTROY,
-    )
-    return lambda_.Function(
-        scope,
-        "Function",
-        description=description,
-        runtime=lambda_.Runtime.PYTHON_3_14,
-        architecture=lambda_.Architecture.ARM_64,
-        handler=handler,
-        code=lambda_.Code.from_asset(str(BACKEND_DIR), exclude=ASSET_EXCLUDES),
-        memory_size=256,
-        timeout=Duration.seconds(10),
-        tracing=lambda_.Tracing.ACTIVE,
-        log_group=log_group,
-        environment=environment,
-    )
+from support_backend.functions import backend_function
 
 
 class ReadTools(Construct):
@@ -49,7 +16,7 @@ class ReadTools(Construct):
         orders: dynamodb.ITableV2,
     ) -> None:
         super().__init__(scope, construct_id)
-        self.function = _tool_function(
+        self.function = backend_function(
             self,
             "Read-only support tools: get_customer, get_order_status",
             "read_tools.handler.lambda_handler",
@@ -73,7 +40,7 @@ class RefundTool(Construct):
         refunds: dynamodb.ITableV2,
     ) -> None:
         super().__init__(scope, construct_id)
-        self.function = _tool_function(
+        self.function = backend_function(
             self,
             "Idempotent refund tool: refund_customer",
             "refund_tool.handler.lambda_handler",
