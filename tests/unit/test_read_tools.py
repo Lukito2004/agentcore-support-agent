@@ -3,15 +3,8 @@ from types import SimpleNamespace
 import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError
 
+from common import dynamo
 from read_tools import handler
-
-
-@pytest.fixture(autouse=True)
-def fresh_tables():
-    """Drop cached table clients so each test talks to its own moto sandbox."""
-    handler._table.cache_clear()
-    yield
-    handler._table.cache_clear()
 
 
 def call(tool: str, args, lambda_context, target: str = "customer-orders___"):
@@ -102,7 +95,7 @@ class _FailingTable:
     ],
 )
 def test_backend_failures_are_classified(monkeypatch, lambda_context, exc, retryable):
-    monkeypatch.setattr(handler, "_table", lambda _env: _FailingTable(exc))
+    monkeypatch.setattr(dynamo, "table", lambda _env: _FailingTable(exc))
     result = call("get_order_status", {"order_id": "123"}, lambda_context)
     assert result["error"]["code"] == "BACKEND_UNAVAILABLE"
     assert result["error"]["retryable"] is retryable

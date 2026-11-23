@@ -20,7 +20,7 @@ def _table(scope: Construct, construct_id: str, partition_key: str, **kwargs) ->
 
 
 class BusinessTables(Construct):
-    """Authoritative business state: customers and orders."""
+    """Authoritative business state: customers, orders and refunds."""
 
     def __init__(self, scope: Construct, construct_id: str) -> None:
         super().__init__(scope, construct_id)
@@ -42,3 +42,5 @@ class BusinessTables(Construct):
                 )
             ],
         )
+        # Keyed by idempotency key, so a duplicate refund is a failed conditional write.
+        self.refunds = _table(self, "Refunds", "idempotency_key")
