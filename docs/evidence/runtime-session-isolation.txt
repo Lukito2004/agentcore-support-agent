@@ -1,0 +1,34 @@
+﻿Runtime session test, 2026-11-23 22:21:04, target: deployed runtime
+
+[PASS] Session A mentions an order
+  session: session-a-db3ddb38-d6fb-42c1-b49e-512fac35ee6e
+  payload: {"prompt": "Hi, I have a question about my order ORD-5890. Please just confirm the order number for now."}
+  reply:   Hi! I can confirm that you've mentioned order **ORD-5890**. 
+
+What would you like to know about this order? I'm happy to help with order details, account information, or refunds.
+
+[PASS] Session A recalls it (same microVM)
+  session: session-a-db3ddb38-d6fb-42c1-b49e-512fac35ee6e
+  payload: {"prompt": "Which order number did I mention earlier in this conversation?"}
+  reply:   You mentioned order number **ORD-5890** at the start of our conversation.
+
+Is there something specific about that order I can help you with?
+
+[PASS] Session B does not know it (new microVM)
+  session: session-b-88dd4a28-f76d-40b3-a7ea-ba57b94a702e
+  payload: {"prompt": "Which order number did I mention earlier in this conversation?"}
+  reply:   I don't see any previous messages in our conversation history, so you haven't mentioned an order number yet. This appears to be the start of our chat.
+
+If you'd like help with an order, please share the order number and let me know what you need assistance with!
+
+[PASS] Client-supplied actorId is rejected
+  session: session-b-88dd4a28-f76d-40b3-a7ea-ba57b94a702e
+  payload: {"prompt": "hi", "actorId": "admin"}
+  reply:   ERROR INVALID_REQUEST: unsupported fields: actorId
+
+[PASS] Non-string prompt is rejected
+  session: session-b-88dd4a28-f76d-40b3-a7ea-ba57b94a702e
+  payload: {"prompt": 42}
+  reply:   ERROR INVALID_REQUEST: prompt must be a string
+
+Result: 0 failed

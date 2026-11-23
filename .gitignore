@@ -31,8 +31,9 @@ cdk.out/
 cdk.context.json.bak
 *.tsbuildinfo
 
-# AgentCore CLI local artifacts
+# AgentCore CLI local state, build cache and deployed-state (holds account ID and ARNs)
 .bedrock_agentcore/
+agentcore/.cli/
 agentcore/.cache/
 
 # OS/IDE

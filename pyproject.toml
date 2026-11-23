@@ -3,7 +3,7 @@ name = "agentcore-final-project"
 version = "0.0.0"
 description = "Production-like Customer Support Agent on Amazon Bedrock AgentCore (Runtime, Gateway, Memory, Identity, Policy)."
 readme = "README.md"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.14,<3.15"
 dependencies = []
 
 # Repository-wide developer tooling. Each deployable component (agent, infra, backend)
@@ -20,8 +20,9 @@ dev = [
 package = false
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 100
+src = [".", "app/support_agent"]  # so the agent's local modules sort as first-party
 extend-exclude = ["cdk.out", "node_modules", "agentcore/cdk"]
 
 [tool.ruff.lint]
@@ -41,6 +42,7 @@ select = [
 # Pytest
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
+pythonpath = ["app/support_agent"]
 addopts = "-ra --strict-markers"
 markers = [
     "integration: hits real AWS resources; excluded from CI",
