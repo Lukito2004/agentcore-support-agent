@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "support-agent"
 version = "0.1.0"
 description = "Customer support agent on AgentCore Runtime using Strands"
-requires-python = ">=3.10"
+requires-python = ">=3.14,<3.15"
 dependencies = [
     "aws-opentelemetry-distro ~= 0.21.0",
     "bedrock-agentcore[strands-agents] >= 1.18.1, < 2.0.0",

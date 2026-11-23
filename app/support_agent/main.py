@@ -1,8 +1,9 @@
 from functools import lru_cache
 
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from strands import Agent, tool
 from strands.agent.conversation_manager.null_conversation_manager import NullConversationManager
-from bedrock_agentcore.runtime import BedrockAgentCoreApp
+
 from model.load import load_model
 from parse import parse_payload
 
@@ -11,16 +12,20 @@ DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Use tools when appropriate
 # Define a collection of tools used by the model
 tools = []
 
+
 # Define a simple function tool
 @tool
 def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
     return a + b
 
+
 tools.append(add_numbers)
+
 
 def _make_conversation_manager():
     return NullConversationManager()
+
 
 @lru_cache(maxsize=128)
 def _get_agent(session_id: str, actor_id: str) -> Agent:
@@ -33,6 +38,7 @@ def _get_agent(session_id: str, actor_id: str) -> Agent:
         system_prompt=DEFAULT_SYSTEM_PROMPT,
         tools=tools,
     )
+
 
 def create_app():
     app = BedrockAgentCoreApp()
@@ -57,6 +63,7 @@ def create_app():
             yield event
 
     return app
+
 
 app = create_app()
 if __name__ == "__main__":

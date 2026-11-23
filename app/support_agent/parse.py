@@ -1,5 +1,6 @@
 from typing import Any
 
+
 def _strip_trailing_tool_use(messages: Any) -> list[dict]:
     """Strip toolUse blocks from the tail until the last message has none."""
     if not isinstance(messages, list):
@@ -11,7 +12,9 @@ def _strip_trailing_tool_use(messages: Any) -> list[dict]:
         if not isinstance(last, dict):
             raise ValueError("each message must be an object")
         original_content = last.get("content", [])
-        if not isinstance(original_content, list) or not all(isinstance(block, dict) for block in original_content):
+        if not isinstance(original_content, list) or not all(
+            isinstance(block, dict) for block in original_content
+        ):
             raise ValueError("each message content value must be a list of content blocks")
 
         content = [block for block in original_content if "toolUse" not in block]
@@ -23,6 +26,7 @@ def _strip_trailing_tool_use(messages: Any) -> list[dict]:
         messages.pop()
 
     return messages
+
 
 def parse_payload(payload: dict):
     """Accept a caller-supplied message history or a plain prompt string."""
