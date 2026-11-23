@@ -1,0 +1,7 @@
+# LF everywhere, so diffs and CI (Linux) match regardless of the editor's OS.
+* text=auto eol=lf
+
+# Windows scripts keep CRLF for Windows PowerShell and cmd.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf

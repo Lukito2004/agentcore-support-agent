@@ -10,7 +10,15 @@
       "entrypoint": "main.py",
       "codeLocation": "app/support_agent",
       "runtimeVersion": "PYTHON_3_14",
-      "protocol": "HTTP"
+      "protocol": "HTTP",
+      "authorizerType": "CUSTOM_JWT",
+      "authorizerConfiguration": {
+        "customJwtAuthorizer": {
+          "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_j2xAGAHVM/.well-known/openid-configuration",
+          "allowedClients": ["1cmf12kmhm73b170sp9re1rneh"]
+        }
+      },
+      "requestHeaderAllowlist": ["Authorization"]
     }
   ]
 }
