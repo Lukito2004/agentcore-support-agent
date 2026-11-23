@@ -5,7 +5,6 @@ from strands.agent.conversation_manager.null_conversation_manager import NullCon
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from model.load import load_model
 from parse import parse_payload
-from memory.session import get_memory_session_manager
 
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Use tools when appropriate."
 
@@ -30,7 +29,6 @@ def _get_agent(session_id: str, actor_id: str) -> Agent:
     and supports in-memory session management for local dev."""
     return Agent(
         model=load_model(),
-        session_manager=get_memory_session_manager(session_id, actor_id),
         conversation_manager=_make_conversation_manager(),
         system_prompt=DEFAULT_SYSTEM_PROMPT,
         tools=tools,
