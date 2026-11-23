@@ -42,6 +42,7 @@ select = [
 # Pytest
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
+pythonpath = ["app/support_agent"]
 addopts = "-ra --strict-markers"
 markers = [
     "integration: hits real AWS resources; excluded from CI",
