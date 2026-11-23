@@ -1,5 +1,5 @@
 # Checks runtime session behavior: same session keeps context, a new session does not, bad payloads are rejected.
-# Usage: .\scripts\test_sessions.ps1 [-Local] [-OutFile docs\evidence\step3-session-isolation.txt]
+# Usage: .\scripts\test_sessions.ps1 [-Local] [-OutFile docs\evidence\runtime-session-isolation.txt]
 param(
     [switch]$Local,
     [string]$Runtime = "support_agent",
@@ -33,7 +33,7 @@ function Invoke-Agent([string]$SessionId, [string]$Payload) {
     return $text.Trim()
 }
 
-function Test-Step([string]$Name, [string]$SessionId, [string]$Payload, [scriptblock]$Check) {
+function Assert-Reply([string]$Name, [string]$SessionId, [string]$Payload, [scriptblock]$Check) {
     $reply = Invoke-Agent $SessionId $Payload
     $ok = & $Check $reply
     if (-not $ok) { $script:failures++ }
@@ -53,11 +53,11 @@ Write-Log ("Runtime session test, {0}, target: {1}" -f (Get-Date -Format "yyyy-M
 Write-Log ""
 
 $recall = '{"prompt": "Which order number did I mention earlier in this conversation?"}'
-Test-Step "Session A mentions an order" $sessionA "{`"prompt`": `"Hi, I have a question about my order $orderRef. Please just confirm the order number for now.`"}" { param($r) -not $r.StartsWith("ERROR") }
-Test-Step "Session A recalls it (same microVM)" $sessionA $recall { param($r) $r -match $orderRef }
-Test-Step "Session B does not know it (new microVM)" $sessionB $recall { param($r) -not ($r -match $orderRef) -and -not $r.StartsWith("ERROR") }
-Test-Step "Client-supplied actorId is rejected" $sessionB '{"prompt": "hi", "actorId": "admin"}' { param($r) $r.StartsWith("ERROR INVALID_REQUEST") }
-Test-Step "Non-string prompt is rejected" $sessionB '{"prompt": 42}' { param($r) $r.StartsWith("ERROR INVALID_REQUEST") }
+Assert-Reply "Session A mentions an order" $sessionA "{`"prompt`": `"Hi, I have a question about my order $orderRef. Please just confirm the order number for now.`"}" { param($r) -not $r.StartsWith("ERROR") }
+Assert-Reply "Session A recalls it (same microVM)" $sessionA $recall { param($r) $r -match $orderRef }
+Assert-Reply "Session B does not know it (new microVM)" $sessionB $recall { param($r) -not ($r -match $orderRef) -and -not $r.StartsWith("ERROR") }
+Assert-Reply "Client-supplied actorId is rejected" $sessionB '{"prompt": "hi", "actorId": "admin"}' { param($r) $r.StartsWith("ERROR INVALID_REQUEST") }
+Assert-Reply "Non-string prompt is rejected" $sessionB '{"prompt": 42}' { param($r) $r.StartsWith("ERROR INVALID_REQUEST") }
 
 Write-Log ("Result: {0} failed" -f $script:failures)
 if ($OutFile) {

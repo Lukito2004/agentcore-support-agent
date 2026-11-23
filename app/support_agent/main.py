@@ -8,7 +8,7 @@ from model.load import load_model
 from prompts import SYSTEM_PROMPT
 from validation import InvalidRequestError, validate_payload
 
-# Business tools arrive through AgentCore Gateway in a later step.
+# Business tools are not wired in yet; they will come from AgentCore Gateway over MCP.
 TOOLS: list = []
 
 # Keeps the last N messages so a long session cannot overflow the model context.
