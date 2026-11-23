@@ -1,0 +1,45 @@
+# Secrets & credentials, must NEVER reach the repository
+.env
+.env.*
+!.env.example
+agentcore/.env.local
+*.pem
+*.key
+*.p12
+credentials
+credentials.json
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node/CDK
+node_modules/
+cdk.out/
+cdk.context.json.bak
+*.tsbuildinfo
+
+# AgentCore CLI local artifacts
+.bedrock_agentcore/
+agentcore/.cache/
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp

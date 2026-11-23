@@ -1,0 +1,47 @@
+[project]
+name = "agentcore-final-project"
+version = "0.0.0"
+description = "Production-like Customer Support Agent on Amazon Bedrock AgentCore (Runtime, Gateway, Memory, Identity, Policy)."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = []
+
+# Repository-wide developer tooling. Each deployable component (agent, infra, backend)
+# declares its own runtime dependencies in its own pyproject.toml.
+[dependency-groups]
+dev = [
+    "ruff>=0.8",
+    "pytest>=8.3",
+    "moto[dynamodb,stepfunctions,sns]>=5.0",
+    "boto3>=1.35",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = ["cdk.out", "node_modules", "agentcore/cdk"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear: likely bugs
+    "UP",  # pyupgrade: modern syntax
+    "S",   # bandit: security issues
+    "SIM", # simplifications
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert is the point of tests
+
+# Pytest
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: hits real AWS resources; excluded from CI",
+]
