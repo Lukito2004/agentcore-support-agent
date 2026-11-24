@@ -6,7 +6,7 @@ from strands.agent.conversation_manager import SlidingWindowConversationManager
 
 from caller import AuthError, SessionRegistry, caller_from_headers
 from gateway import connect_from_env
-from hooks import CustomerBindingHook
+from hooks import ToolCallGuard
 from memory import memory_session_manager
 from model.load import load_model
 from prompts import build_system_prompt
@@ -35,7 +35,7 @@ def _get_agent(session_id: str, actor_id: str, customer_id: str) -> Agent:
         model=load_model(),
         system_prompt=build_system_prompt(customer_id),
         tools=[gateway.client] if gateway else [],
-        hooks=[CustomerBindingHook(customer_id)],
+        hooks=[ToolCallGuard(customer_id)],
         session_manager=memory_session_manager(session_id, actor_id),
         conversation_manager=SlidingWindowConversationManager(window_size=CONVERSATION_WINDOW),
     )

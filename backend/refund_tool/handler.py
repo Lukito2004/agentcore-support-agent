@@ -46,6 +46,13 @@ def _amount(args: dict) -> Decimal:
     return amount.quantize(CENTS)
 
 
+def _check_amount_cents(args: dict, amount: Decimal) -> None:
+    """amount_cents is what the Gateway policy compares, so it must be exactly amount in cents."""
+    value = args.get("amount_cents")
+    if isinstance(value, bool) or not isinstance(value, int) or value != int(amount * 100):
+        raise ToolError("INVALID_ARGUMENT", "amount_cents must equal amount in whole cents")
+
+
 def _text(args: dict, field: str, max_chars: int) -> str:
     value = args.get(field)
     if not isinstance(value, str) or not value.strip() or len(value) > max_chars:
@@ -162,6 +169,7 @@ def refund_customer(args: dict) -> dict:
     customer_id = require_id(args, "customer_id", CUSTOMER_ID_PATTERN)
     order_id = require_id(args, "order_id", ORDER_ID_PATTERN)
     amount = _amount(args)
+    _check_amount_cents(args, amount)
     reason = _text(args, "reason", MAX_REASON_CHARS)
     key = _idempotency_key(args)
     fingerprint = _fingerprint(customer_id, order_id, amount)

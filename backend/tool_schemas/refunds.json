@@ -17,6 +17,10 @@
           "type": "number",
           "description": "Refund amount in USD as a number with at most two decimals, e.g. 25.5."
         },
+        "amount_cents": {
+          "type": "integer",
+          "description": "Set automatically from amount by the agent. Leave empty."
+        },
         "reason": {
           "type": "string",
           "description": "Short reason for the refund, in the customer's words."
