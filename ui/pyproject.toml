@@ -1,0 +1,13 @@
+[project]
+name = "support-agent-ui"
+version = "0.1.0"
+description = "Streamlit chat app for customers and refund approval app for staff."
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "streamlit>=1.50,<2",
+    "httpx>=0.28,<1",
+    "boto3>=1.35",
+]
+
+[tool.uv]
+package = false

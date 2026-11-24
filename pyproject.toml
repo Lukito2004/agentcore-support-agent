@@ -14,6 +14,7 @@ dev = [
     "pytest>=8.3",
     "moto[dynamodb,stepfunctions,sns]>=5.0",
     "boto3>=1.35",
+    "httpx>=0.28",
 ]
 
 [tool.uv]
@@ -23,7 +24,7 @@ package = false
 target-version = "py314"
 line-length = 100
 # So each component's local modules sort as first-party imports.
-src = [".", "app/support_agent", "backend", "infra", "scripts"]
+src = [".", "app/support_agent", "backend", "infra", "scripts", "ui"]
 extend-exclude = ["cdk.out", "node_modules", "agentcore/cdk"]
 
 [tool.ruff.lint]
@@ -43,7 +44,7 @@ select = [
 # Pytest
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
-pythonpath = ["app/support_agent", "backend"]
+pythonpath = ["app/support_agent", "backend", "ui"]
 addopts = "-ra --strict-markers"
 markers = [
     "integration: hits real AWS resources; excluded from CI",
