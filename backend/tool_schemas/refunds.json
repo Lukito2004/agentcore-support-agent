@@ -1,7 +1,7 @@
 [
   {
     "name": "refund_customer",
-    "description": "Refund money to a customer for one of their orders. This moves money: only call it when the customer explicitly asks for a refund and has given the order ID, the amount and a reason. Refunds above 1000 USD are not allowed. Always pass the same idempotency_key when retrying the same refund.",
+    "description": "Refund money to a customer for one of their orders. This moves money: only call it when the customer explicitly asks for a refund and has given the order ID, the amount and a reason. Refunds above 1000 USD are not allowed.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -27,7 +27,7 @@
         },
         "idempotency_key": {
           "type": "string",
-          "description": "Unique ID for this refund operation (8-128 letters, digits, '-' or '_')."
+          "description": "Set automatically by the agent. Any value is fine; it is replaced."
         }
       },
       "required": ["customer_id", "order_id", "amount", "reason", "idempotency_key"]

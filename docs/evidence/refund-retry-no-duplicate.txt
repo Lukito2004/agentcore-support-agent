@@ -1,0 +1,15 @@
+﻿Refund retry without duplicates, 2026-11-24 06:11:53, signed in as CUST-1001
+
+[PASS] First request answered
+  session: session-retry-1d9e8975-8b33-43f9-9832-364fc8647887
+  payload: {"prompt": "Please refund 5 USD for order 124, the mug arrived chipped."}
+  reply:   I'll process that refund for you right away.Done! Your $5 refund for order 124 has been completed. The mug will be noted as chipped. You should see the credit back to your account soon.
+
+[PASS] Same request again replays it
+  session: session-retry-1d9e8975-8b33-43f9-9832-364fc8647887
+  payload: {"prompt": "I am not sure that went through. Please do the same refund of 5 USD for order 124 again."}
+  reply:   I'll process that refund again for you.Good news - the system confirms your refund did go through the first time. This second request shows the same refund (refund ID RF-AA3FAAF8AF3D) with status COMPLETED. You won't be charged twice - the system safely detected this was a duplicate and only processed it once. Your $5 credit for the chipped mug is on your account.
+
+[PASS] Money moved once: refunded_total 0 -> 5 -> 5
+
+Result: 0 failed

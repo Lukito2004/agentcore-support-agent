@@ -3,10 +3,15 @@ import pytest
 from memory import MEMORY_ID_ENV, memory_session_manager, retrieval_namespaces
 
 
-def test_namespaces_are_scoped_to_the_actor():
+def test_only_this_actors_preferences_are_retrieved():
     namespaces = retrieval_namespaces("user-123")
-    assert set(namespaces) == {"/users/user-123/preferences", "/users/user-123/facts"}
+    assert set(namespaces) == {"/users/user-123/preferences"}
     assert all("*" not in ns and "{" not in ns for ns in namespaces)
+
+
+def test_business_facts_are_never_retrieved_from_memory():
+    # Orders and refunds come from tools; a remembered copy goes stale (and holds PII).
+    assert not any("facts" in ns for ns in retrieval_namespaces("user-123"))
 
 
 def test_different_actors_never_share_a_namespace():
