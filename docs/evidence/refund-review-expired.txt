@@ -1,0 +1,12 @@
+{
+  "refund_id": "RF-88F171930F49",
+  "customer_id": "CUST-1001",
+  "order_id": "129",
+  "amount": 50.0,
+  "currency": "USD",
+  "reason": "Delivery was late",
+  "status": "EXPIRED",
+  "created_at": "2026-11-24T11:17:19+00:00",
+  "decided_at": "2026-11-24T11:32:21+00:00",
+  "decision_note": "no decision before the time limit"
+}

@@ -7,9 +7,11 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from common import dynamo
+from approval import handler as approval_handler
+from common import dynamo, workflow
 
 SEED_FILE = Path(__file__).resolve().parents[2] / "backend" / "seed" / "seed_data.json"
+STATE_MACHINE = "test-refund-review"
 TABLES = {
     "CUSTOMERS_TABLE": ("test-customers", "customer_id"),
     "ORDERS_TABLE": ("test-orders", "order_id"),
@@ -17,12 +19,18 @@ TABLES = {
 }
 
 
+def _clear_clients() -> None:
+    dynamo.clear_caches()
+    workflow.client.cache_clear()
+    approval_handler._sns.cache_clear()
+
+
 @pytest.fixture(autouse=True)
 def fresh_clients():
     """Drop cached boto3 clients so each test talks to its own moto sandbox."""
-    dynamo.clear_caches()
+    _clear_clients()
     yield
-    dynamo.clear_caches()
+    _clear_clients()
 
 
 @pytest.fixture
@@ -38,7 +46,20 @@ def aws(monkeypatch):
 
 
 @pytest.fixture
-def seeded_tables(aws):
+def review_workflow(aws, monkeypatch):
+    """An empty Step Functions state machine; tests check which reviews were started."""
+    sfn = boto3.client("stepfunctions")
+    arn = sfn.create_state_machine(
+        name=STATE_MACHINE,
+        definition=json.dumps({"StartAt": "Done", "States": {"Done": {"Type": "Succeed"}}}),
+        roleArn="arn:aws:iam::123456789012:role/test-review",
+    )["stateMachineArn"]
+    monkeypatch.setenv("STATE_MACHINE_ARN", arn)
+    return lambda: sfn.list_executions(stateMachineArn=arn)["executions"]
+
+
+@pytest.fixture
+def seeded_tables(aws, review_workflow):
     seed = json.loads(SEED_FILE.read_text(encoding="utf-8"), parse_float=Decimal)
     dynamodb = boto3.resource("dynamodb")
     for name, key in TABLES.values():

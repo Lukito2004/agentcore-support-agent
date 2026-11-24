@@ -1,7 +1,7 @@
 [
   {
     "name": "refund_customer",
-    "description": "Refund money to a customer for one of their orders. This moves money: only call it when the customer explicitly asks for a refund and has given the order ID, the amount and a reason. Refunds above 1000 USD are not allowed.",
+    "description": "Refund money to a customer for one of their orders. This moves money: only call it when the customer explicitly asks for a refund and has given the order ID, the amount and a reason. When an order's refunds reach 500 USD or more, the refund returns status PENDING_APPROVAL: it waits for a review by the support team and is not refunded yet. Refunds above 1000 USD are not allowed.",
     "inputSchema": {
       "type": "object",
       "properties": {
