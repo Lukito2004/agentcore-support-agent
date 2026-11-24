@@ -11,9 +11,10 @@ POST /invocations                      one request
   invoke_agent Strands Agents          the agent turn
     execute_event_loop_cycle           one model call plus the tools it asked for
       chat <model>                     the Bedrock call, with finish_reason
-      execute_tool <tool>              one tool attempt
-        mcp tools/call <tool>          the call through AgentCore Gateway
+      execute_tool <tool>              one tool attempt through AgentCore Gateway
 ```
+
+ADOT's MCP instrumentation is turned off (`OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=aws_mcp` in `agentcore.json`). It added a second `mcp tools/call` span per tool call, also marked as a tool span, and AgentCore Evaluations rejected those as unknown targets. The Strands `execute_tool` span already records the arguments and the result. Evidence saved before that change still shows the extra span.
 
 - **Console:** CloudWatch, GenAI Observability, Bedrock AgentCore, then the agent, its sessions, a session's traces and their spans.
 - **Raw spans:** the runtime's log group (`/aws/bedrock-agentcore/runtimes/<runtime id>-DEFAULT`), log stream `spans`, one JSON record per span with `attributes.session.id`. Only the tool Lambdas' spans are in `aws/spans`.

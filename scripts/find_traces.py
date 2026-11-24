@@ -54,12 +54,20 @@ def query_spans(log_group: str, session_id: str, hours: float) -> list[dict]:
 
 
 def tool_error_code(span: dict) -> str | None:
-    """The error code a tool returned, read from the tool span's recorded result."""
-    result = str(span.get("attributes", {}).get("gen_ai.tool.call.result", ""))
-    if '"ok":false' not in result.replace(" ", ""):
+    """The error code a tool returned, from the Strands tool span's gen_ai.choice event."""
+    if not span.get("name", "").startswith("execute_tool"):
         return None
-    start = result.find('"code":')
-    return result[start + 7 :].split(",")[0].strip(' "') if start >= 0 else "UNKNOWN"
+    for event in span.get("events", []):
+        if event.get("name") != "gen_ai.choice":
+            continue
+        try:
+            blocks = json.loads(event.get("attributes", {}).get("message", "[]"))
+            payload = json.loads(blocks[0]["text"])
+        except ValueError, LookupError, TypeError:
+            continue
+        if isinstance(payload, dict) and payload.get("ok") is False:
+            return str((payload.get("error") or {}).get("code", "UNKNOWN"))
+    return None
 
 
 def describe(span: dict) -> list[str]:
