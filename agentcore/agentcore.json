@@ -25,7 +25,27 @@
       }
     }
   ],
-  "memories": [],
+  "memories": [
+    {
+      "name": "supportMemory",
+      "description": "Per-customer preferences and facts for the support agent",
+      "eventExpiryDuration": 30,
+      "strategies": [
+        {
+          "type": "USER_PREFERENCE",
+          "namespaceTemplates": [
+            "/users/{actorId}/preferences"
+          ]
+        },
+        {
+          "type": "SEMANTIC",
+          "namespaceTemplates": [
+            "/users/{actorId}/facts"
+          ]
+        }
+      ]
+    }
+  ],
   "knowledgeBases": [],
   "credentials": [
     {
