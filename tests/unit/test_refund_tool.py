@@ -4,6 +4,7 @@ import pytest
 from botocore.exceptions import ClientError, ReadTimeoutError
 
 from common import dynamo
+from guards import to_cents
 from refund_tool import handler
 
 # Order 124 belongs to CUST-1001, is DELIVERED and cost 25.00 USD.
@@ -17,9 +18,11 @@ BASE = {
 
 
 def refund(lambda_context, **overrides):
-    return handler.lambda_handler(
-        {**BASE, **overrides}, lambda_context("refunds___refund_customer")
-    )
+    """Call the tool as the agent does: amount_cents is derived from amount unless overridden."""
+    args = {**BASE, **overrides}
+    if "amount_cents" not in overrides:
+        args["amount_cents"] = to_cents(args.get("amount"))
+    return handler.lambda_handler(args, lambda_context("refunds___refund_customer"))
 
 
 def refunded_total(table, order_id: str = "124") -> Decimal:
@@ -162,3 +165,22 @@ def test_throttling_is_retryable(seeded_tables, lambda_context, monkeypatch):
     result = refund(lambda_context)
     assert result["error"]["code"] == "BACKEND_UNAVAILABLE"
     assert result["error"]["retryable"] is True
+
+
+@pytest.mark.parametrize(
+    ("amount", "amount_cents"),
+    [(10, 100), (10, 1001), (10, None), (10, "1000"), (10, 1000.0), (10, True)],
+)
+def test_amount_cents_must_match_amount(table, lambda_context, amount, amount_cents):
+    result = refund(lambda_context, amount=amount, amount_cents=amount_cents)
+    assert result["error"]["code"] == "INVALID_ARGUMENT"
+    assert table("REFUNDS_TABLE").scan()["Count"] == 0
+
+
+def test_caller_skipping_the_agent_cannot_hide_a_big_amount(table, lambda_context):
+    # Small amount_cents to pass the Gateway policy, big amount to get paid: still rejected.
+    result = refund(
+        lambda_context, customer_id="CUST-1002", order_id="125", amount=999, amount_cents=100
+    )
+    assert result["error"]["code"] == "INVALID_ARGUMENT"
+    assert table("REFUNDS_TABLE").scan()["Count"] == 0

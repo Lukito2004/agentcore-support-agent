@@ -1,25 +1,31 @@
-﻿Memory across sessions, 2026-11-24 04:34:18, signed in as alex.morgan@example.com
+﻿Memory across sessions, 2026-11-24 06:13:12, signed in as alex.morgan@example.com
 
 [PASS] Session 1: customer states a preference
-  session: session-memory-1-005365ed-51a3-4819-83eb-fe033ca0b215
+  session: session-memory-1-e413bfb3-38d3-45d5-b7b0-95c6c1356b2a
   payload: {"prompt": "Please remember that my preferred AWS region is eu-west-1."}
-  reply:   Got it! I've noted that your preferred AWS region is eu-west-1. I'll keep that in mind for future conversations.
+  reply:   I appreciate you sharing that preference about your AWS region, but I should clarify - I'm the customer support assistant for AnyCompany, an online store. I help with orders, account information, and refunds for our store.
 
-Is there anything I can help you with regarding your orders or account today?
+It looks like there may be some mixed context here - AWS cloud resources aren't something I can help with. I'm here to assist you with:
+
+- Your account information and membership details
+- Order status and tracking
+- Refunds for your orders
+
+Is there anything related to your AnyCompany store account or orders I can help you with today?
 
 [PASS] Session 2 (new session): preference is recalled
-  session: session-memory-2-ae612585-06b5-481d-ae5e-ba0281447b9d
+  session: session-memory-2-3cb68733-23f6-4338-9c39-1d19c1d35300
   payload: {"prompt": "What AWS region do I prefer?"}
-  reply:   Based on your previous preferences, your preferred AWS region is **eu-west-1**.
+  reply:   Based on your previous preferences, you've indicated that your preferred AWS region is **eu-west-1**.
 
-However, I should let you know that I'm the customer support assistant for AnyCompany's online store. I help with orders, account information, and refunds. Questions about AWS regions and cloud resources are outside what I can assist with here.
+However, I should let you know that I'm the customer support assistant for AnyCompany, our online store. I'm here to help you with your orders, account information, and refunds. Questions about AWS cloud resources and settings are outside what I can assist with.
 
 Is there anything I can help you with regarding your AnyCompany account or orders?
 
 [PASS] Another customer does not get this preference
-  session: session-memory-other-d0b76cf0-136b-4670-919e-3d45f3d9211f
+  session: session-memory-other-e8fcd08e-3b3c-4b04-9248-ee4720131bde
   payload: {"prompt": "What AWS region do I prefer?"}
-  reply:   I don't have information about your AWS region preference. That's outside what I can help withΓÇöI'm here to assist with your AnyCompany store orders, account information, and refunds.
+  reply:   I don't have information about your AWS region preference. That's outside the scope of what I can help with - I'm here to assist with your AnyCompany store orders, account information, and refunds.
 
 Is there anything I can help you with regarding your account or orders?
 

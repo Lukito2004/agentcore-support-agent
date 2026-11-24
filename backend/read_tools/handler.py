@@ -13,6 +13,7 @@ ORDER_FIELDS = (
     "items",
     "total",
     "refunded_total",
+    "pending_refund_total",
     "currency",
     "carrier",
     "tracking_number",
@@ -45,7 +46,11 @@ def get_order_status(args: dict) -> dict:
     # Same answer for "missing" and "someone else's", so order IDs cannot be probed.
     if item is None or item["customer_id"] != customer_id:
         raise ToolError("NOT_FOUND", f"no order {order_id} for customer {customer_id}")
-    return {field: item[field] for field in ORDER_FIELDS if field in item}
+    order = {field: item[field] for field in ORDER_FIELDS if field in item}
+    # Always state it, so "nothing refunded yet" is an explicit, authoritative answer.
+    order.setdefault("refunded_total", 0)
+    order.setdefault("pending_refund_total", 0)
+    return order
 
 
 TOOLS: dict[str, Tool] = {

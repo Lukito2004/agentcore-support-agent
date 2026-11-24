@@ -22,25 +22,32 @@
             "1cmf12kmhm73b170sp9re1rneh"
           ]
         }
-      }
+      },
+      "envVars": [
+        {
+          "name": "GUARDRAIL_ID",
+          "value": "he2k0mepju88"
+        },
+        {
+          "name": "GUARDRAIL_VERSION",
+          "value": "1"
+        }
+      ],
+      "additionalPolicies": [
+        "arn:aws:iam::230858577630:policy/support-agent-apply-guardrail"
+      ]
     }
   ],
   "memories": [
     {
       "name": "supportMemory",
-      "description": "Per-customer preferences and facts for the support agent",
+      "description": "Per-customer preferences for the support agent",
       "eventExpiryDuration": 30,
       "strategies": [
         {
           "type": "USER_PREFERENCE",
           "namespaceTemplates": [
             "/users/{actorId}/preferences"
-          ]
-        },
-        {
-          "type": "SEMANTIC",
-          "namespaceTemplates": [
-            "/users/{actorId}/facts"
           ]
         }
       ]
@@ -97,10 +104,39 @@
         }
       },
       "enableSemanticSearch": false,
-      "exceptionLevel": "NONE"
+      "exceptionLevel": "NONE",
+      "policyEngineConfiguration": {
+        "policyEngineName": "support_tools_policies",
+        "mode": "ENFORCE"
+      }
     }
   ],
-  "policyEngines": [],
+  "policyEngines": [
+    {
+      "name": "support_tools_policies",
+      "description": "Authorization for support agent tool calls",
+      "policies": [
+        {
+          "name": "allow_read_tools",
+          "description": "Read-only tools are always allowed",
+          "statement": "// Read-only tools are always allowed; the Lambda still checks the order belongs to the customer.\npermit (\n  principal,\n  action in [\n    AgentCore::Action::\"customer-orders___get_customer\",\n    AgentCore::Action::\"customer-orders___get_order_status\"\n  ],\n  resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:230858577630:gateway/supportagent-default-support-tools-heawf1kemt\"\n);\n",
+          "sourceFile": "policies/allow_read_tools.cedar",
+          "validationMode": "FAIL_ON_ANY_FINDINGS",
+          "enforcementMode": "ACTIVE",
+          "authorizationPhase": "INITIATE"
+        },
+        {
+          "name": "limit_refunds",
+          "description": "Refunds up to 1,000 USD",
+          "statement": "// Refunds up to 1,000 USD only; amount_cents is set by the agent's code, not by the model.\n// A call without amount_cents, or above the limit, matches no permit and is denied by default.\npermit (\n  principal,\n  action == AgentCore::Action::\"refunds___refund_customer\",\n  resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:230858577630:gateway/supportagent-default-support-tools-heawf1kemt\"\n)\nwhen { context.input has amount_cents && context.input.amount_cents <= 100000 };\n",
+          "sourceFile": "policies/limit_refunds.cedar",
+          "validationMode": "FAIL_ON_ANY_FINDINGS",
+          "enforcementMode": "ACTIVE",
+          "authorizationPhase": "INITIATE"
+        }
+      ]
+    }
+  ],
   "configBundles": [],
   "harnesses": []
 }

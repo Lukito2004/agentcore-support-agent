@@ -31,6 +31,7 @@ def test_get_order_status_explains_delay(seeded_tables, lambda_context):
     assert result["data"]["status"] == "DELAYED"
     assert result["data"]["delay_reason"] == "Carrier backlog in warehouse zone 4."
     assert result["data"]["total"] == 149.99  # Decimal converted to a plain number
+    assert result["data"]["refunded_total"] == 0  # stated even when nothing was refunded
 
 
 def test_another_customers_order_looks_missing(seeded_tables, lambda_context):

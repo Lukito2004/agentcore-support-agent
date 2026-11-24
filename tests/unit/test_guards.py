@@ -1,6 +1,8 @@
 import pytest
 
-from guards import bind_customer_id, tool_base_name
+from guards import add_amount_cents, bind_customer_id, to_cents, tool_base_name
+
+REFUND = "refunds___refund_customer"
 
 SIGNED_IN = "CUST-1001"
 
@@ -58,3 +60,37 @@ def test_non_dict_input_becomes_a_bound_object():
 def test_tool_base_name_strips_the_target_prefix():
     assert tool_base_name("refunds___refund_customer") == "refund_customer"
     assert tool_base_name("refund_customer") == "refund_customer"
+
+
+@pytest.mark.parametrize(
+    ("amount", "cents"),
+    [(10, 1000), (25.5, 2550), (0.1 + 0.2, 30), (149.99, 14999), (1000, 100000), (1000.01, 100001)],
+)
+def test_amounts_convert_to_exact_cents(amount, cents):
+    assert to_cents(amount) == cents
+
+
+@pytest.mark.parametrize("amount", ["10", None, True, float("nan"), float("inf"), [10]])
+def test_unusable_amounts_give_no_cents(amount):
+    assert to_cents(amount) is None
+
+
+def test_refund_calls_get_amount_cents_from_the_amount():
+    bound = add_amount_cents({"name": REFUND, "input": {"amount": 5000}})
+    assert bound["input"]["amount_cents"] == 500000
+
+
+def test_model_supplied_amount_cents_is_replaced():
+    # A manipulated model cannot pass the policy with a small amount_cents and a big amount.
+    bound = add_amount_cents({"name": REFUND, "input": {"amount": 5000, "amount_cents": 100}})
+    assert bound["input"]["amount_cents"] == 500000
+
+
+def test_invalid_amount_leaves_amount_cents_out():
+    bound = add_amount_cents({"name": REFUND, "input": {"amount": "lots", "amount_cents": 100}})
+    assert "amount_cents" not in bound["input"]
+
+
+def test_other_tools_get_no_amount_cents():
+    tool_use = {"name": "customer-orders___get_order_status", "input": {"order_id": "123"}}
+    assert add_amount_cents(tool_use) == tool_use

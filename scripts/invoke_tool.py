@@ -3,7 +3,7 @@
 Usage:
   uv run python scripts/invoke_tool.py get_order_status customer_id=CUST-1001 order_id=123
   uv run python scripts/invoke_tool.py --target refunds refund_customer customer_id=CUST-1001
-      order_id=124 amount=10 reason=Damaged idempotency_key=operation-123
+      order_id=124 amount=10 amount_cents=1000 reason=Damaged idempotency_key=operation-123
 """
 
 import argparse

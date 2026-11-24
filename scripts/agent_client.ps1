@@ -1,6 +1,9 @@
 # Shared helpers for the agent test scripts: sign in, invoke the runtime, check replies, save a log.
 # Dot-source it: . (Join-Path $PSScriptRoot "agent_client.ps1")
 
+# Read CLI output as UTF-8, otherwise non-ASCII characters in replies get garbled.
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+
 $script:AgentRuntime = "support_agent"
 $script:AgentLocal = $false
 $script:AgentToken = $null
@@ -57,7 +60,8 @@ function Assert-Reply([string]$Name, [string]$SessionId, [string]$Payload, [scri
     Write-Log ""
 }
 
-function New-SessionId([string]$Label) { "session-$Label-$([guid]::NewGuid())" }
+# Memory only accepts letters, digits, - and _ in session IDs, so other characters become -.
+function New-SessionId([string]$Label) { "session-$($Label -replace '[^A-Za-z0-9_-]', '-')-$([guid]::NewGuid())" }
 
 function Complete-AgentTest([string]$OutFile) {
     Write-Log ("Result: {0} failed" -f $script:AgentFailures)

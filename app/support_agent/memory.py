@@ -1,6 +1,7 @@
-"""AgentCore Memory: conversational context across sessions, scoped to one signed-in user.
+"""AgentCore Memory: customer preferences across sessions, scoped to one signed-in user.
 
-Business state (orders, refunds, accounts) is never read from memory; it comes from tools.
+Only preferences are kept long term. Business state (orders, refunds, accounts) lives in
+DynamoDB and is always read through tools; a copy in memory would go stale and hold PII.
 """
 
 import os
@@ -19,10 +20,7 @@ def retrieval_namespaces(actor_id: str) -> dict[str, Retrieval]:
     """Long-term namespaces to search each turn. Each one is scoped to this actor only."""
     if not actor_id or "/" in actor_id:
         raise ValueError("actor_id must be a non-empty ID without '/'")
-    return {
-        f"/users/{actor_id}/preferences": Retrieval(top_k=5, min_relevance=0.3),
-        f"/users/{actor_id}/facts": Retrieval(top_k=5, min_relevance=0.5),
-    }
+    return {f"/users/{actor_id}/preferences": Retrieval(top_k=5, min_relevance=0.3)}
 
 
 def memory_session_manager(session_id: str, actor_id: str) -> Any | None:
