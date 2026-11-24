@@ -29,9 +29,9 @@ class ReadTools(Construct):
             environment,
         )
 
-        # Least privilege: only the read calls the tools make (no Scan), on these two tables.
+        # Least privilege: only the read calls the tools make, single-item reads on two tables.
         customers.grant(self.function, "dynamodb:GetItem")
-        orders.grant(self.function, "dynamodb:GetItem", "dynamodb:Query")
+        orders.grant(self.function, "dynamodb:GetItem")
 
 
 class RefundTool(Construct):

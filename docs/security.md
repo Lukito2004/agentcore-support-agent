@@ -26,7 +26,7 @@ The rule behind all of it: **the model's output is untrusted.** The prompt asks 
 
 | Role | May do | May not |
 |---|---|---|
-| Read tools Lambda | `GetItem` on customers; `GetItem`, `Query` on orders | write anything, scan, touch refunds |
+| Read tools Lambda | `GetItem` on customers and orders | write anything, query, scan, touch refunds |
 | Refund tool Lambda | `GetItem`, `PutItem` on refunds; `GetItem`, `UpdateItem` on orders; `StartExecution` on the review state machine | read customers, delete, approve or stop a review |
 | Review notify Lambda | `UpdateItem` on refunds; publish to the approval topic | touch orders |
 | Review finalize Lambda | `GetItem`, `UpdateItem` on refunds; `UpdateItem` on orders | create refunds |

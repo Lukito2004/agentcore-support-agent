@@ -32,7 +32,7 @@ The choices behind the design, the alternatives considered, and what each one co
 
 **Decision.** `customer-orders` (`get_customer`, `get_order_status`) and `refunds` (`refund_customer`) are separate Lambdas.
 
-**Why.** Different risk, different rights: the read Lambda can only `GetItem` and `Query`; only the refund Lambda can write, and only with the conditional transaction. Cedar treats them differently too: reads are always permitted, refunds only up to 1,000 USD.
+**Why.** Different risk, different rights: the read Lambda can only `GetItem`; only the refund Lambda can write, and only with the conditional transaction. Cedar treats them differently too: reads are always permitted, refunds only up to 1,000 USD.
 
 ## 4. Business state in DynamoDB, preferences in Memory, no RAG
 

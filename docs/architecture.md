@@ -171,7 +171,7 @@ A system prompt is not enough because the model's output is untrusted: an inject
 
 ## Failure handling, retries and idempotency
 
-**Errors are structured.** Tool Lambdas never raise to Gateway; they return `{"ok": false, "error": {"code", "message", "retryable"}}` ([responses.py](../backend/common/responses.py)). The entrypoint returns fixed error codes (`MISSING_SESSION`, `UNAUTHENTICATED`, `SESSION_FORBIDDEN`, `INVALID_REQUEST`, `TOOLS_UNAVAILABLE`, `INTERNAL_ERROR`) and never internal details.
+**Errors are structured.** Tool Lambdas never raise to Gateway; they return `{"ok": false, "error": {"code", "message", "retryable"}}` ([responses.py](../backend/common/responses.py)). An unexpected exception becomes a non-retryable `INTERNAL_ERROR`, with the stack trace only in the log ([dispatch.py](../backend/common/dispatch.py)). The entrypoint returns fixed error codes (`MISSING_SESSION`, `UNAUTHENTICATED`, `SESSION_FORBIDDEN`, `INVALID_REQUEST`, `TOOLS_UNAVAILABLE`, `INTERNAL_ERROR`) and never internal details.
 
 **Retryable is not the same as safe to retry.** An error is retryable when it is transient (throttling, timeouts, `BACKEND_UNAVAILABLE`, Gateway's masked Lambda timeout). An operation is safe to retry when repeating it cannot do harm: reads always, and `refund_customer` only because every call carries an idempotency key computed by the agent's code. `RetryHook` retries only when both are true: 3 attempts with full-jitter exponential backoff ([reliability.py](../app/support_agent/reliability.py)). A Cedar deny is a decision, never retried.
 
@@ -215,7 +215,7 @@ Two deployables, each from code:
 **Versions.** Every `agentcore deploy` that changes the agent creates a new immutable Runtime version (version 16 at the time of writing). The `DEFAULT` endpoint follows the latest version; a named endpoint points at a fixed version. Guardrail versions are immutable too, and old ones are retained.
 
 **Safe rollout.**
-1. CI runs lint, formatting, 247 unit tests and `cdk synth` on every push.
+1. CI runs lint, formatting, 273 unit tests and `cdk synth` on every push.
 2. Diff the synthesized CloudFormation against the deployed stack before deploying; AgentCore policies have no dry run.
 3. Deploy, then run the scenario scripts and the evaluations against the new version.
 4. In production, clients call a named endpoint (`agentcore add runtime-endpoint --runtime support_agent --name prod --version N`), not `DEFAULT`. A new version is tested on `DEFAULT` or a `staging` endpoint, then `prod` is moved to it.

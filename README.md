@@ -69,7 +69,7 @@ infra/               CDK app for the business backend
 ui/                  Streamlit chat app and staff app
 scripts/             setup, test, trace and evaluation scripts
 evals/               evaluation scenarios
-tests/unit/          247 unit tests; run without AWS
+tests/unit/          273 unit tests; run without AWS
 docs/                design, security, setup, failures, evaluations, evidence
 ```
 

@@ -33,6 +33,12 @@ def run_tool(tools: dict[str, Tool], event, context, log: logging.Logger) -> dic
     except ToolError as err:
         result = responses.error(err)
         outcome, code = "error", err.code
+    except Exception:
+        # A bug or misconfiguration: the stack trace goes to the log, no details to the caller.
+        # Not retryable; a repeated refund is still safe, because it replays by its key.
+        log.exception("tool failed unexpectedly", extra={"fields": {"tool": tool}})
+        result = responses.error(ToolError("INTERNAL_ERROR", "the tool failed unexpectedly"))
+        outcome, code = "error", "INTERNAL_ERROR"
 
     log.info(
         "tool call finished",

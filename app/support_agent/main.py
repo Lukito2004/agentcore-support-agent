@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
@@ -44,70 +45,85 @@ def _get_agent(session_id: str, actor_id: str, customer_id: str) -> Agent:
     )
 
 
+async def handle(payload, context, *, sessions, gateway, agent_for, log: logging.Logger):
+    """Check one request, then stream the agent's reply. A rejection yields one error event.
+
+    The checks run in order: session ID, caller, session owner, payload, Gateway token.
+    """
+    session_id = getattr(context, "session_id", None)
+    if not session_id:
+        yield _error("MISSING_SESSION", "a runtime session ID is required")
+        return
+    try:
+        validate_session_id(session_id)
+    except InvalidRequestError as exc:
+        # The ID is client input, so it is not logged.
+        log.warning("Rejected a malformed session ID: %s", exc)
+        yield _error("INVALID_REQUEST", str(exc))
+        return
+
+    try:
+        caller = caller_from_headers(getattr(context, "request_headers", None))
+    except AuthError as exc:
+        log.warning("Unauthenticated request in session %s: %s", session_id, exc)
+        yield _error("UNAUTHENTICATED", str(exc))
+        return
+
+    if not sessions.claim(session_id, caller.actor_id):
+        log.warning("Session %s reused by another user %s", session_id, caller.log_id)
+        yield _error("SESSION_FORBIDDEN", "this session belongs to another user")
+        return
+
+    try:
+        prompt = validate_payload(payload)
+    except InvalidRequestError as exc:
+        log.warning("Rejected request in session %s: %s", session_id, exc)
+        yield _error("INVALID_REQUEST", str(exc))
+        return
+
+    if gateway:
+        try:
+            await gateway.token.ensure_fresh()
+        except Exception:
+            log.exception("Could not get a Gateway token in session %s", session_id)
+            yield _error("TOOLS_UNAVAILABLE", "support tools are unavailable, please retry")
+            return
+
+    # Log metadata only; prompts can contain personal data.
+    log.info(
+        "Invoking agent: session=%s actor=%s prompt_chars=%d",
+        session_id,
+        caller.log_id,
+        len(prompt),
+    )
+    try:
+        agent = agent_for(session_id, caller.actor_id, caller.customer_id)
+        async for event in agent.stream_async(prompt):
+            if not isinstance(event, dict) or "event" not in event:
+                continue
+            block_start = event["event"].get("contentBlockStart")
+            if block_start is not None and not block_start.get("start"):
+                continue
+            yield event
+    except Exception:
+        log.exception("Agent invocation failed in session %s", session_id)
+        yield _error("INTERNAL_ERROR", "the assistant failed to respond, please try again")
+
+
 def create_app() -> BedrockAgentCoreApp:
     app = BedrockAgentCoreApp()
-    log = app.logger
 
     @app.entrypoint
     async def invoke(payload, context):
-        session_id = getattr(context, "session_id", None)
-        if not session_id:
-            yield _error("MISSING_SESSION", "a runtime session ID is required")
-            return
-        try:
-            validate_session_id(session_id)
-        except InvalidRequestError as exc:
-            # The ID is client input, so it is not logged.
-            log.warning("Rejected a malformed session ID: %s", exc)
-            yield _error("INVALID_REQUEST", str(exc))
-            return
-
-        try:
-            caller = caller_from_headers(getattr(context, "request_headers", None))
-        except AuthError as exc:
-            log.warning("Unauthenticated request in session %s: %s", session_id, exc)
-            yield _error("UNAUTHENTICATED", str(exc))
-            return
-
-        if not sessions.claim(session_id, caller.actor_id):
-            log.warning("Session %s reused by another user %s", session_id, caller.log_id)
-            yield _error("SESSION_FORBIDDEN", "this session belongs to another user")
-            return
-
-        try:
-            prompt = validate_payload(payload)
-        except InvalidRequestError as exc:
-            log.warning("Rejected request in session %s: %s", session_id, exc)
-            yield _error("INVALID_REQUEST", str(exc))
-            return
-
-        if gateway:
-            try:
-                await gateway.token.ensure_fresh()
-            except Exception:
-                log.exception("Could not get a Gateway token in session %s", session_id)
-                yield _error("TOOLS_UNAVAILABLE", "support tools are unavailable, please retry")
-                return
-
-        # Log metadata only; prompts can contain personal data.
-        log.info(
-            "Invoking agent: session=%s actor=%s prompt_chars=%d",
-            session_id,
-            caller.log_id,
-            len(prompt),
-        )
-        try:
-            agent = _get_agent(session_id, caller.actor_id, caller.customer_id)
-            async for event in agent.stream_async(prompt):
-                if not isinstance(event, dict) or "event" not in event:
-                    continue
-                block_start = event["event"].get("contentBlockStart")
-                if block_start is not None and not block_start.get("start"):
-                    continue
-                yield event
-        except Exception:
-            log.exception("Agent invocation failed in session %s", session_id)
-            yield _error("INTERNAL_ERROR", "the assistant failed to respond, please try again")
+        async for event in handle(
+            payload,
+            context,
+            sessions=sessions,
+            gateway=gateway,
+            agent_for=_get_agent,
+            log=app.logger,
+        ):
+            yield event
 
     return app
 
