@@ -39,10 +39,12 @@ def get_customer(args: dict) -> dict:
 
 
 def get_order_status(args: dict) -> dict:
+    customer_id = require_id(args, "customer_id", CUSTOMER_ID_PATTERN)
     order_id = require_id(args, "order_id", ORDER_ID_PATTERN)
     item = dynamo.get_item("ORDERS_TABLE", {"order_id": order_id})
-    if item is None:
-        raise ToolError("NOT_FOUND", f"no order with ID {order_id}")
+    # Same answer for "missing" and "someone else's", so order IDs cannot be probed.
+    if item is None or item["customer_id"] != customer_id:
+        raise ToolError("NOT_FOUND", f"no order {order_id} for customer {customer_id}")
     return {field: item[field] for field in ORDER_FIELDS if field in item}
 
 

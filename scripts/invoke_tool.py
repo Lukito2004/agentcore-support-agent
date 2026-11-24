@@ -1,7 +1,7 @@
 """Call a deployed tool Lambda the same way AgentCore Gateway does.
 
 Usage:
-  uv run python scripts/invoke_tool.py get_order_status order_id=123
+  uv run python scripts/invoke_tool.py get_order_status customer_id=CUST-1001 order_id=123
   uv run python scripts/invoke_tool.py --target refunds refund_customer customer_id=CUST-1001
       order_id=124 amount=10 reason=Damaged idempotency_key=operation-123
 """

@@ -31,20 +31,26 @@ class Caller:
 LOCAL_DEV_CALLER = Caller(actor_id="local-dev-user", customer_id="CUST-1001")
 
 
-def _claims(token: str) -> dict:
-    """Decode the JWT payload.
-
-    The signature, issuer, expiry and client are already verified by the AgentCore Runtime
-    authorizer before the request reaches this code, so the claims can be trusted here.
-    """
+def decode_jwt_claims(token: str) -> dict:
+    """Decode a JWT payload without checking its signature; raises ValueError if malformed."""
     try:
         payload = token.split(".")[1]
         claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
     except (IndexError, ValueError, binascii.Error) as exc:
-        raise AuthError("malformed bearer token") from exc
+        raise ValueError("malformed JWT") from exc
     if not isinstance(claims, dict):
-        raise AuthError("malformed bearer token")
+        raise ValueError("malformed JWT")
     return claims
+
+
+def _claims(token: str) -> dict:
+    """The signature, issuer, expiry and client are already verified by the AgentCore Runtime
+    authorizer before the request reaches this code, so the claims can be trusted here.
+    """
+    try:
+        return decode_jwt_claims(token)
+    except ValueError as exc:
+        raise AuthError("malformed bearer token") from exc
 
 
 def caller_from_headers(headers: Mapping[str, str] | None) -> Caller:

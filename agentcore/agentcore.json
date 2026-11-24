@@ -5,20 +5,102 @@
   "runtimes": [
     {
       "name": "support_agent",
-      "build": "CodeZip",
       "modelProvider": "Bedrock",
+      "build": "CodeZip",
       "entrypoint": "main.py",
       "codeLocation": "app/support_agent",
       "runtimeVersion": "PYTHON_3_14",
       "protocol": "HTTP",
+      "requestHeaderAllowlist": [
+        "Authorization"
+      ],
       "authorizerType": "CUSTOM_JWT",
       "authorizerConfiguration": {
         "customJwtAuthorizer": {
           "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_j2xAGAHVM/.well-known/openid-configuration",
-          "allowedClients": ["1cmf12kmhm73b170sp9re1rneh"]
+          "allowedClients": [
+            "1cmf12kmhm73b170sp9re1rneh"
+          ]
+        }
+      }
+    }
+  ],
+  "memories": [
+    {
+      "name": "supportMemory",
+      "description": "Per-customer preferences and facts for the support agent",
+      "eventExpiryDuration": 30,
+      "strategies": [
+        {
+          "type": "USER_PREFERENCE",
+          "namespaceTemplates": [
+            "/users/{actorId}/preferences"
+          ]
+        },
+        {
+          "type": "SEMANTIC",
+          "namespaceTemplates": [
+            "/users/{actorId}/facts"
+          ]
+        }
+      ]
+    }
+  ],
+  "knowledgeBases": [],
+  "credentials": [
+    {
+      "authorizerType": "OAuthCredentialProvider",
+      "name": "support-tools-oauth",
+      "vendor": "CustomOauth2",
+      "clientId": "6ldi8lqdj2mtguf1ifeehv660q",
+      "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_j2xAGAHVM/.well-known/openid-configuration",
+      "scopes": [
+        "support-gateway/tools.invoke"
+      ]
+    }
+  ],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [
+    {
+      "name": "support-tools",
+      "protocolType": "MCP",
+      "description": "Business tools for the support agent",
+      "targets": [
+        {
+          "name": "customer-orders",
+          "targetType": "lambdaFunctionArn",
+          "lambdaFunctionArn": {
+            "lambdaArn": "arn:aws:lambda:us-east-1:230858577630:function:SupportAgentBackend-ReadToolsFunctionA1A394D8-ke0aUbsxk1TG",
+            "toolSchemaFile": "backend/tool_schemas/customer_orders.json"
+          }
+        },
+        {
+          "name": "refunds",
+          "targetType": "lambdaFunctionArn",
+          "lambdaFunctionArn": {
+            "lambdaArn": "arn:aws:lambda:us-east-1:230858577630:function:SupportAgentBackend-RefundToolFunction805A5991-fOc4fNsMopLU",
+            "toolSchemaFile": "backend/tool_schemas/refunds.json"
+          }
+        }
+      ],
+      "authorizerType": "CUSTOM_JWT",
+      "authorizerConfiguration": {
+        "customJwtAuthorizer": {
+          "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_j2xAGAHVM/.well-known/openid-configuration",
+          "allowedClients": [
+            "6ldi8lqdj2mtguf1ifeehv660q"
+          ],
+          "allowedScopes": [
+            "support-gateway/tools.invoke"
+          ]
         }
       },
-      "requestHeaderAllowlist": ["Authorization"]
+      "enableSemanticSearch": false,
+      "exceptionLevel": "NONE"
     }
-  ]
+  ],
+  "policyEngines": [],
+  "configBundles": [],
+  "harnesses": []
 }

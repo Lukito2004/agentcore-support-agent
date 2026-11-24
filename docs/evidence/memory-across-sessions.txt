@@ -1,0 +1,26 @@
+﻿Memory across sessions, 2026-11-24 04:34:18, signed in as alex.morgan@example.com
+
+[PASS] Session 1: customer states a preference
+  session: session-memory-1-005365ed-51a3-4819-83eb-fe033ca0b215
+  payload: {"prompt": "Please remember that my preferred AWS region is eu-west-1."}
+  reply:   Got it! I've noted that your preferred AWS region is eu-west-1. I'll keep that in mind for future conversations.
+
+Is there anything I can help you with regarding your orders or account today?
+
+[PASS] Session 2 (new session): preference is recalled
+  session: session-memory-2-ae612585-06b5-481d-ae5e-ba0281447b9d
+  payload: {"prompt": "What AWS region do I prefer?"}
+  reply:   Based on your previous preferences, your preferred AWS region is **eu-west-1**.
+
+However, I should let you know that I'm the customer support assistant for AnyCompany's online store. I help with orders, account information, and refunds. Questions about AWS regions and cloud resources are outside what I can assist with here.
+
+Is there anything I can help you with regarding your AnyCompany account or orders?
+
+[PASS] Another customer does not get this preference
+  session: session-memory-other-d0b76cf0-136b-4670-919e-3d45f3d9211f
+  payload: {"prompt": "What AWS region do I prefer?"}
+  reply:   I don't have information about your AWS region preference. That's outside what I can help withΓÇöI'm here to assist with your AnyCompany store orders, account information, and refunds.
+
+Is there anything I can help you with regarding your account or orders?
+
+Result: 0 failed
