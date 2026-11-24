@@ -46,6 +46,16 @@ cdk deploy
 
 The script runs five drills, checks what the customer is told and that no money moved, then prints each drill's trace tree.
 
+## The brief's failure types
+
+| Failure type | How it is exercised | What the trace shows |
+|---|---|---|
+| Tool timeout | drill order `900`: the tool Lambda sleeps past its 10 s timeout | `execute_tool` spans of about 10 s with status ERROR "Please retry later", `support.tool_retry` between them (failure 3 below) |
+| HTTP 500 | drill order `901`: the backend always fails with a retryable `BACKEND_UNAVAILABLE` | three `execute_tool` attempts whose result is `ok: false`, `support.tool_result` with `retryable=True` (failure 4) |
+| LLM loop | drill order `902`: the status is always "processing" and the customer asks to keep checking | two identical `execute_tool` spans, then `support.loop_guard_blocked` on the third (failure 6) |
+| Invalid parameters | "Refund minus 5 dollars"; a malformed session ID; Lambda argument checks in unit tests | before the fix, `refund_customer` with `amount 20` and `outcome=ok`; now no refund call, or `support.refund_amount_blocked`; `support.request_failed: INVALID_REQUEST` (failures 1 and 5) |
+| Wrong tool selection | every tool call of the 10 evaluation scenarios is scored by `ToolSelectionAccuracy` and `TrajectoryInOrderMatch` | the `execute_tool` span names against the request; both scored 1.00 ([evaluations.md](evaluations.md)). A tool the policy does not permit is denied by default at the Gateway |
+
 ## Summary
 
 | # | Failure | Found by | Fix |
