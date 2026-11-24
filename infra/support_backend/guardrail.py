@@ -17,9 +17,11 @@ SECRET_TYPES = (
     "AWS_ACCESS_KEY",
     "AWS_SECRET_KEY",
 )
-# Blocked when typed in only. In replies they match order IDs (CVV) and tracking numbers,
-# and any masking ends the model's turn before its tool calls run.
-INPUT_ONLY_SECRET_TYPES = ("CREDIT_DEBIT_CARD_CVV", "US_BANK_ACCOUNT_NUMBER")
+# Blocked when typed in only: in replies it matches tracking numbers, and any masking ends
+# the model's turn before its tool calls run.
+INPUT_ONLY_SECRET_TYPES = ("US_BANK_ACCOUNT_NUMBER",)
+# CREDIT_DEBIT_CARD_CVV is left out on purpose: it flagged 3-digit order IDs such as "order 124"
+# and blocked normal refund requests. A CVV is useless without the card number, which is blocked.
 HARMFUL_CONTENT_TYPES = ("HATE", "INSULTS", "SEXUAL", "VIOLENCE", "MISCONDUCT")
 
 
@@ -74,7 +76,7 @@ class SupportGuardrail(Construct):
             self,
             "Version",
             guardrail_identifier=self.guardrail.attr_guardrail_id,
-            description="v2: no masking of CVVs and bank account numbers in replies",
+            description="v3: no CVV detection, no bank account masking in replies",
         )
         # A new description publishes a new version; older ones are kept for rollback.
         self.version.apply_removal_policy(RemovalPolicy.RETAIN)

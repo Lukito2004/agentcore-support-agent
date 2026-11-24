@@ -17,7 +17,15 @@ class SupportAgentBackendStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         tables = BusinessTables(self, "Tables")
-        read_tools = ReadTools(self, "ReadTools", customers=tables.customers, orders=tables.orders)
+        # Off unless deployed with: cdk deploy -c fault_injection=enabled
+        fault_injection = self.node.try_get_context("fault_injection") == "enabled"
+        read_tools = ReadTools(
+            self,
+            "ReadTools",
+            customers=tables.customers,
+            orders=tables.orders,
+            fault_injection=fault_injection,
+        )
         approval = RefundApproval(
             self,
             "RefundApproval",
@@ -58,6 +66,7 @@ class SupportAgentBackendStack(Stack):
             "ApprovalStateMachineArn": approval.state_machine.state_machine_arn,
             "ApprovalTopicArn": approval.topic.topic_arn,
             "ApprovalTimeoutMinutes": str(approval.timeout_minutes),
+            "FaultInjection": "enabled" if fault_injection else "disabled",
         }
         for name, value in outputs.items():
             CfnOutput(self, name, value=value)

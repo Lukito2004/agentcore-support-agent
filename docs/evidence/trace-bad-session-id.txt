@@ -1,0 +1,7 @@
+Session drill bad session id with spaces 3a27d90b-2aba-42a4-9ad2-6d34240f456e: 1 spans
+
+Trace 6b058cfe7dbd3df85c85ecc758e49787
+  POST /invocations (68 ms)
+      * support.request_failed: error_code=INVALID_REQUEST
+
+Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 1

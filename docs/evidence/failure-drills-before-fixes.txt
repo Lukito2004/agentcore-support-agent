@@ -1,0 +1,96 @@
+Traces of the first drill runs and an earlier failure, before the fixes. Generated with scripts/find_traces.py.
+
+===== Malformed session ID crashed the agent (found while testing refund approval) =====
+Session session-700 USD refund-fc92198e-9e08-4e30-ad1e-91d7b574a5df: 3 spans
+
+Trace 6b0571451ed26c531990a10a74fc92f7
+  POST /invocations (347 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (78 ms)
+    Bedrock AgentCore.ListEvents (39 ms)  <-- ERROR ValidationException: An error occurred (ValidationException) when calling the ListEvents operation: 1 validation error d
+        * exception: exception.type=botocore.errorfactory.ValidationException, exception.message=An error occurred (ValidationException) when calling the ListEvents operation: 1 validation error detected: Value at 'sessio
+
+Summary: error spans 1, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 0
+
+===== Slow tool: Gateway's masked Lambda timeout was not retried =====
+Session session-drill-slow-b75d7bd8-0e1a-4419-aee3-ea5ea7924b4b: 23 spans
+
+Trace 6b05843e29a0e23b1e07d3563629b825
+  POST /invocations (14848 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (637 ms)
+    mcp tools/list (231 ms)
+    invoke_agent Strands Agents (13378 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (179 ms)
+      execute_event_loop_cycle (11753 ms)
+          * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
+          * support.tool_result: retryable=False, error_code=TOOL_ERROR, attempt=1, tool=get_order_status, outcome=error
+        chat (1292 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1280 ms)
+        execute_tool customer-orders___get_order_status (10191 ms)  <-- ERROR An internal error occurred. Please retry later.
+          mcp tools/call customer-orders___get_order_status (10190 ms)  <-- ERROR 
+      execute_event_loop_cycle (1278 ms)
+        chat (1201 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1199 ms)
+
+Summary: error spans 2, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 0
+
+===== Failing backend: guardrail blocked 'order 901' as a card CVV =====
+Session session-drill-failing-57829b07-b1d9-4d96-a3cf-f7721fc8d4a2: 17 spans
+
+Trace 6b0584582dd83a8c12ccd13468b6242a
+  POST /invocations (1978 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (95 ms)
+    mcp tools/list (235 ms)
+    invoke_agent Strands Agents (1003 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (210 ms)
+      execute_event_loop_cycle (641 ms)
+        chat (556 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (345 ms)  <-- guardrail intervened
+          Bedrock AgentCore.DeleteEvent (122 ms)
+
+Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 1, refunds blocked 0, failed requests 0
+
+===== Invalid amount: the model worked out a 20 USD refund from 'minus 5 dollars' =====
+Session session-drill-invalid-ce15776b-22ff-4cb9-83a2-883166152737: 31 spans
+
+Trace 6b058477768e20ad04e271026822033c
+  POST /invocations (9416 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (77 ms)
+    mcp tools/list (213 ms)
+    invoke_agent Strands Agents (8461 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (284 ms)
+      execute_event_loop_cycle (2160 ms)
+          * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
+          * support.tool_result: attempt=1, tool=get_order_status, outcome=ok
+        chat (1708 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1696 ms)
+        execute_tool customer-orders___get_order_status (218 ms)
+          mcp tools/call customer-orders___get_order_status (216 ms)
+      execute_event_loop_cycle (4452 ms)
+          * support.tool_call: actor=f450674ef000, idempotency_key=op-6a8dbdd160f0242f1fefa5b2654a760b, customer_id_overridden=False, tool=refund_customer
+          * support.tool_result: attempt=1, tool=refund_customer, outcome=ok
+        chat (1873 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1871 ms)
+        execute_tool refunds___refund_customer (2352 ms)
+          mcp tools/call refunds___refund_customer (2351 ms)
+      execute_event_loop_cycle (1408 ms)
+        chat (1338 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1335 ms)
+
+Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 0
+
+===== Polling loop: remembered context made the guardrail see a prompt attack =====
+Session session-drill-loop-6e6e24e9-17f8-4b8e-881d-682a37129c98: 17 spans
+
+Trace 6b05898722bce52a49c864c9053443e3
+  POST /invocations (2131 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (58 ms)
+    mcp tools/list (248 ms)
+    invoke_agent Strands Agents (1145 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (172 ms)
+      execute_event_loop_cycle (828 ms)
+        chat (754 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (599 ms)  <-- guardrail intervened
+          Bedrock AgentCore.DeleteEvent (69 ms)
+
+Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 1, refunds blocked 0, failed requests 0
+

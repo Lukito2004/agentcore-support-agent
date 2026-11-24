@@ -4,13 +4,14 @@ from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 
+import telemetry
 from caller import AuthError, SessionRegistry, caller_from_headers
 from gateway import connect_from_env
 from hooks import RetryHook, ToolCallGuard
 from memory import memory_session_manager
 from model.load import load_model
 from prompts import build_system_prompt
-from validation import InvalidRequestError, validate_payload
+from validation import InvalidRequestError, validate_payload, validate_session_id
 
 # Keeps the last N messages so a long session cannot overflow the model context.
 CONVERSATION_WINDOW = 20
@@ -21,6 +22,8 @@ gateway = connect_from_env()
 
 
 def _error(code: str, message: str) -> dict:
+    # Every rejected or failed request is marked in its trace.
+    telemetry.record("request_failed", error_code=code)
     return {"error": {"code": code, "message": message}}
 
 
@@ -50,6 +53,13 @@ def create_app() -> BedrockAgentCoreApp:
         session_id = getattr(context, "session_id", None)
         if not session_id:
             yield _error("MISSING_SESSION", "a runtime session ID is required")
+            return
+        try:
+            validate_session_id(session_id)
+        except InvalidRequestError as exc:
+            # The ID is client input, so it is not logged.
+            log.warning("Rejected a malformed session ID: %s", exc)
+            yield _error("INVALID_REQUEST", str(exc))
             return
 
         try:

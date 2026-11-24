@@ -12,6 +12,11 @@ from dataclasses import dataclass
 CUSTOMER_ID_PATTERN = re.compile(r"^CUST-\d{3,10}$")
 
 
+def pseudonym(actor_id: str) -> str:
+    """Stable pseudonym for logs and traces, so raw user IDs never reach CloudWatch."""
+    return hashlib.sha256(actor_id.encode()).hexdigest()[:12]
+
+
 class AuthError(Exception):
     """The caller could not be identified. The message is safe to return."""
 
@@ -23,8 +28,7 @@ class Caller:
 
     @property
     def log_id(self) -> str:
-        """Stable pseudonym for logs, so raw user IDs never reach CloudWatch."""
-        return hashlib.sha256(self.actor_id.encode()).hexdigest()[:12]
+        return pseudonym(self.actor_id)
 
 
 # Used only under `agentcore dev`, which has no authorizer in front of it.

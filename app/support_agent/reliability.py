@@ -19,7 +19,16 @@ SAFE_TO_RETRY = frozenset({"get_customer", "get_order_status", "refund_customer"
 MAX_IDENTICAL_CALLS = 2
 MAX_TOOL_CALLS_PER_TURN = 8
 
-_TRANSIENT_MARKERS = ("timed out", "timeout", "temporarily unavailable", "throttl", "503", "504")
+# Gateway reports a Lambda timeout only as "An internal error occurred. Please retry later."
+_TRANSIENT_MARKERS = (
+    "timed out",
+    "timeout",
+    "temporarily unavailable",
+    "throttl",
+    "503",
+    "504",
+    "retry later",
+)
 _DECISION_MARKERS = ("tool execution denied",)  # a policy deny is a decision, not a failure
 
 
@@ -46,6 +55,24 @@ def add_idempotency_key(tool_use: dict, actor_id: str, session_id: str) -> dict:
 def _result_text(result: dict | None) -> str:
     content = (result or {}).get("content") or []
     return " ".join(block.get("text", "") for block in content if isinstance(block, dict))
+
+
+def tool_outcome(result: dict | None, exception: BaseException | None) -> tuple[str, str | None]:
+    """("ok" | "error" | "exception", error code or None), for traces."""
+    if exception is not None:
+        return "exception", type(exception).__name__
+    text = _result_text(result)
+    try:
+        payload = json.loads(text)
+    except ValueError:
+        payload = None
+    if isinstance(payload, dict) and payload.get("ok") is False:
+        return "error", str((payload.get("error") or {}).get("code", "UNKNOWN"))
+    if (result or {}).get("status") == "error":
+        if any(marker in text.lower() for marker in _DECISION_MARKERS):
+            return "error", "POLICY_DENIED"
+        return "error", "TOOL_ERROR"
+    return "ok", None
 
 
 def is_retryable(tool_name: str, result: dict | None, exception: BaseException | None) -> bool:
@@ -83,6 +110,10 @@ class RetryTracker:
     def __init__(self, rng: Callable[[], float] = random.random) -> None:
         self._attempts: dict[str, int] = {}
         self._rng = rng
+
+    def attempt(self, tool_use_id: str) -> int:
+        """The attempt number of the call that just finished (1 for the first)."""
+        return self._attempts.get(tool_use_id, 1)
 
     def next_delay(
         self, tool_use_id: str, tool_name: str, result: dict | None, exception: BaseException | None

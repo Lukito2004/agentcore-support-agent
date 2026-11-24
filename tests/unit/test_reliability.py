@@ -106,6 +106,12 @@ def test_transient_error_text_is_retried():
     assert is_retryable(ORDER, tool_result("Gateway timeout (504)", "error"), None) is True
 
 
+def test_gateway_masked_lambda_timeout_is_retried():
+    # What Gateway returned when the tool Lambda timed out in the slow-tool drill.
+    masked = tool_result("An internal error occurred. Please retry later.", "error")
+    assert is_retryable(ORDER, masked, None) is True
+
+
 def test_success_is_not_retried():
     assert is_retryable(ORDER, tool_result({"ok": True, "data": {}}), None) is False
 

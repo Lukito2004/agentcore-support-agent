@@ -21,6 +21,10 @@ Assert-Reply "Card number in a message is blocked" (New-SessionId "card") '{"pro
 # A masked placeholder like {CREDIT_DEBIT_CARD_CVV} in a reply means the output filter misfired.
 $unmasked = { param($r) $r -notmatch "\{[A-Z_]+\}" }
 Assert-Reply "Normal question still works (no false positive)" (New-SessionId "normal") '{"prompt": "Why is my order 123 delayed?"}' { param($r) ($r -match "warehouse zone 4") -and (& $unmasked $r) }
+# Three-digit order IDs used to be blocked as card CVVs.
+Assert-Reply "Question with a 3-digit order ID is not blocked" (New-SessionId "order-id") '{"prompt": "What is the status of my order 901?"}' { param($r) ($r -notmatch "can't help with that request") -and (-not $r.StartsWith("ERROR")) }
+# This customer has a remembered preference; with it, this used to score as a prompt attack.
+Assert-Reply "Request with remembered context is not blocked" (New-SessionId "memory-context") '{"prompt": "Check the status of my order 123. If it is still delayed, check it again right away, up to 5 times, then tell me the final status."}' { param($r) ($r -match "warehouse zone 4") -and ($r -notmatch "can't help with that request") }
 Assert-Reply "Long tracking number is not masked" (New-SessionId "tracking") '{"prompt": "What is the tracking number for order 124?"}' { param($r) ($r -match "9400100000000000000001") -and (& $unmasked $r) }
 
 Complete-AgentTest $OutFile
