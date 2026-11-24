@@ -1,0 +1,39 @@
+[
+  {
+    "name": "get_customer",
+    "description": "Get the current status of one of the customer's orders: status, items, total, amount already refunded, carrier, tracking number, estimated delivery and the delay reason if it is late. Use for questions like 'where is my order' or 'why is my order delayed'. Read-only, never changes the order.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "description": "Customer ID in the form CUST- followed by digits, e.g. CUST-1001."
+        }
+      },
+      "required": [
+        "customer_id"
+      ]
+    }
+  },
+  {
+    "name": "get_order_status",
+    "description": "Look up a customer's account profile (name, email, membership tier, member since). Use when the customer asks about their account. Requires a customer ID like CUST-1001.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "description": "The signed-in customer's ID, e.g. CUST-1001."
+        },
+        "order_id": {
+          "type": "string",
+          "description": "Numeric order ID, e.g. 123."
+        }
+      },
+      "required": [
+        "customer_id",
+        "order_id"
+      ]
+    }
+  }
+]

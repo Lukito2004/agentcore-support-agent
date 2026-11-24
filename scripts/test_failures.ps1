@@ -1,4 +1,4 @@
-# Failure drills: a slow tool, a failing backend, a polling loop, an invalid amount and a bad session ID.
+# Failure drills: a slow tool, a failing backend, a crashing backend, a polling loop, an invalid amount and a bad session ID.
 # Usage: .\scripts\test_failures.ps1 -Email alex.morgan@example.com [-OutFile docs\evidence\failure-drills.txt] [-SkipTraces]
 # Needs the backend deployed with: cdk deploy -c fault_injection=enabled (redeploy without it afterwards).
 param(
@@ -44,6 +44,9 @@ Assert-Reply "Slow tool: Lambda timeout is retried, then reported honestly" $ses
 
 $sessions["Failing backend"] = New-SessionId "drill-failing"
 Assert-Reply "Failing backend: retryable error is retried 3 times, then reported" $sessions["Failing backend"] '{"prompt": "What is the status of my order 901?"}' $noInventedStatus
+
+$sessions["Crashing backend"] = New-SessionId "drill-crash"
+Assert-Reply "Crashing backend: an unhandled Lambda error is retried, then reported honestly" $sessions["Crashing backend"] '{"prompt": "What is the status of my order 903?"}' $noInventedStatus
 
 $sessions["Polling loop"] = New-SessionId "drill-loop"
 Assert-Reply "Polling loop: the loop guard stops repeated identical calls" $sessions["Polling loop"] '{"prompt": "Check the status of my order 902. If it is still processing, check it again right away, up to 5 times, then tell me the final status."}' $notBlocked

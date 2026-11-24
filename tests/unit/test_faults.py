@@ -50,3 +50,12 @@ def test_real_orders_are_untouched_when_on(seeded_tables, lambda_context, drills
 def test_only_the_exact_flag_turns_faults_on(monkeypatch, value):
     monkeypatch.setenv("FAULT_INJECTION", value)
     assert faults.enabled() is False
+
+
+def test_crash_order_fails_the_lambda_itself(seeded_tables, lambda_context, drills_on):
+    with pytest.raises(RuntimeError, match="drill"):
+        order_status("903", lambda_context)
+
+
+def test_crash_order_is_an_ordinary_unknown_order_when_off(seeded_tables, lambda_context):
+    assert order_status("903", lambda_context)["error"]["code"] == "NOT_FOUND"

@@ -12,6 +12,8 @@ import boto3
 from stack_outputs import REGION, get_stack_outputs
 
 SEED_FILE = Path(__file__).resolve().parents[1] / "backend" / "seed" / "seed_data.json"
+# The brief's example key, used live by test_reliability.ps1; removed so each run starts clean.
+BRIEF_IDEMPOTENCY_KEY = "operation-123"
 
 
 def main() -> None:
@@ -25,6 +27,10 @@ def main() -> None:
             for item in seed[key]:
                 batch.put_item(Item=item)
         print(f"Wrote {len(seed[key])} {key} to {table.name}")
+
+    dynamodb.Table(outputs["RefundsTableName"]).delete_item(
+        Key={"idempotency_key": BRIEF_IDEMPOTENCY_KEY}
+    )
 
 
 if __name__ == "__main__":

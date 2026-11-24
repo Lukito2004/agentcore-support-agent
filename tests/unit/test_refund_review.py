@@ -100,3 +100,30 @@ def test_failed_review_start_is_retryable_and_the_retry_starts_it(
     assert len(review_workflow()) == 1
     # The refund was saved once, so the amount is held once.
     assert totals(table) == (Decimal(700), Decimal(700))
+
+
+def test_concurrent_small_refunds_cannot_skip_the_review(table, lambda_context, monkeypatch):
+    # Two 300 USD refunds read the order at the same moment, before either was written.
+    stale_order = table("ORDERS_TABLE").get_item(Key={"order_id": "125"})["Item"]
+    first = refund(lambda_context, amount=300, idempotency_key="operation-first")
+    assert first["data"]["status"] == "COMPLETED"
+
+    real_load = handler._load_refundable_order
+    monkeypatch.setattr(handler, "_load_refundable_order", lambda *_: stale_order)
+    second = refund(lambda_context, amount=300, idempotency_key="operation-second")
+    assert second["error"]["code"] == "ORDER_CHANGED"
+    assert second["error"]["retryable"] is True
+    assert totals(table) == (Decimal(300), Decimal(0))
+
+    # The agent retries with the same key; the fresh read now sends it to review.
+    monkeypatch.setattr(handler, "_load_refundable_order", real_load)
+    retried = refund(lambda_context, amount=300, idempotency_key="operation-second")
+    assert retried["data"]["status"] == "PENDING_APPROVAL"
+    assert totals(table) == (Decimal(600), Decimal(300))
+
+
+def test_refunds_in_sequence_still_complete_below_the_threshold(table, lambda_context):
+    assert refund(lambda_context, amount=200, idempotency_key="operation-a")["ok"] is True
+    second = refund(lambda_context, amount=299.99, idempotency_key="operation-b")
+    assert second["data"]["status"] == "COMPLETED"
+    assert totals(table) == (Decimal("499.99"), Decimal(0))

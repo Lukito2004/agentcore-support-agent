@@ -13,7 +13,7 @@ The choices behind the design, the alternatives considered, and what each one co
 
 **Alternatives.** ECS on Fargate would need session isolation, JWT validation, scaling and tracing built by hand, and is only cheaper at steady high load. Lambda behind API Gateway has no per-session isolation or state, and API Gateway's default 29-second integration timeout is short for a turn with several tool calls and retries.
 
-**Trade-off.** A young service: the CLI-generated runtime role is broader than needed ([security.md](security.md)) and some behaviors had to be learned from traces.
+**Trade-off.** A young service: the CLI-generated runtime role is broader than needed and had to be narrowed with Deny statements ([security.md](security.md)), and some behaviors had to be learned from traces.
 
 ## 2. AgentCore Gateway and MCP for the tools
 
@@ -32,7 +32,7 @@ The choices behind the design, the alternatives considered, and what each one co
 
 **Decision.** `customer-orders` (`get_customer`, `get_order_status`) and `refunds` (`refund_customer`) are separate Lambdas.
 
-**Why.** Different risk, different rights: the read Lambda can only `GetItem` and `Query`; only the refund Lambda can write, and only with the conditional transaction. Cedar treats them differently too: reads are always permitted, refunds only up to 1,000 USD.
+**Why.** Different risk, different rights: the read Lambda can only `GetItem`; only the refund Lambda can write, and only with the conditional transaction. Cedar treats them differently too: reads are always permitted, refunds only up to 1,000 USD.
 
 ## 4. Business state in DynamoDB, preferences in Memory, no RAG
 
@@ -71,7 +71,7 @@ The choices behind the design, the alternatives considered, and what each one co
 - `customer_id` is overwritten from the token before every call.
 - Policies started in `LOG_ONLY` and switched to `ENFORCE` after the logs showed the expected decisions.
 
-**Trade-off.** The same limit appears in three places (Cedar, Lambda, prompt). That is deliberate defense in depth; changing the limit means changing all three.
+**Trade-off.** The same limit appears in two places, Cedar and the Lambda. That is deliberate defense in depth; changing the limit means changing both. It was once in the prompt and the tool description too, and then the model refused large refunds itself, so the Gateway policy never saw them. The prompt now says limits are enforced by the tool and to call it whatever the amount.
 
 ## 8. Idempotency key computed by code
 
@@ -114,7 +114,7 @@ Details in [failure-scenarios.md](failure-scenarios.md).
 
 **Decision.** `us.anthropic.claude-haiku-4-5-20251001-v1:0` through the cross-region inference profile; Sonnet 4.6 is one environment variable away (`MODEL_ID`).
 
-**Why.** Cost and latency. The evaluations scored tool selection and trajectories at 1.00 with Haiku, so the larger model was not needed. The code checks (identity, amounts, keys, loops) do not depend on how smart the model is.
+**Why.** Cost and latency. The evaluations scored tool selection at 1.00 with Haiku, and the wrong-tool drill found 0 wrong picks in 5 runs even with the tool descriptions swapped, so the larger model was not needed. The code checks (identity, amounts, keys, loops) do not depend on how smart the model is.
 
 ## 13. Two deployables
 
@@ -151,3 +151,4 @@ Details in [failure-scenarios.md](failure-scenarios.md).
 - **The model's turn ends when a guardrail changes output**, dropping any tool call in that response. Output masking has to be precise.
 - **AgentCore Memory session IDs allow only letters, digits, `-` and `_`**; the Runtime accepts more, so the agent validates session IDs itself.
 - **Gateway reports a Lambda timeout only as "An internal error occurred. Please retry later."**, which the retry rules had to learn.
+- **A limit you tell the model is enforced by the model, not by your policy.** With the 1,000 USD limit in the tool description, Haiku refused large refunds itself and the Cedar deny was never exercised.

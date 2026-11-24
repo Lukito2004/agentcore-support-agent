@@ -147,6 +147,15 @@ def _write(refund: dict, order: dict) -> None:
         ":limit": limit,
         **status_values,
     }
+    condition = (
+        f"customer_id = :customer AND #status IN ({', '.join(status_values)})"
+        " AND (attribute_not_exists(refunded_total) OR refunded_total <= :limit)"
+    )
+    if refund["status"] == COMPLETED:
+        # Decided without review from an earlier read: a concurrent refund may have since
+        # pushed the order past the threshold. Then this fails and the retry goes to review.
+        condition += " AND (attribute_not_exists(refunded_total) OR refunded_total < :review_floor)"
+        values[":review_floor"] = REVIEW_THRESHOLD - refund["amount"]
     dynamo.client().transact_write_items(
         TransactItems=[
             {
@@ -161,9 +170,7 @@ def _write(refund: dict, order: dict) -> None:
                     "TableName": os.environ["ORDERS_TABLE"],
                     "Key": {"order_id": {"S": refund["order_id"]}},
                     "UpdateExpression": totals,
-                    "ConditionExpression": "customer_id = :customer"
-                    f" AND #status IN ({', '.join(status_values)})"
-                    " AND (attribute_not_exists(refunded_total) OR refunded_total <= :limit)",
+                    "ConditionExpression": condition,
                     "ExpressionAttributeNames": {"#status": "status"},
                     "ExpressionAttributeValues": {
                         k: _serializer.serialize(v) for k, v in values.items()

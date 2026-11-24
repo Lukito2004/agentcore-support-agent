@@ -1,15 +1,20 @@
-﻿Refund retry without duplicates, 2026-11-24 06:11:53, signed in as CUST-1001
+﻿Refund retry without duplicates, 2026-11-24 21:06:08, signed in as CUST-1001
 
 [PASS] First request answered
-  session: session-retry-1d9e8975-8b33-43f9-9832-364fc8647887
+  session: session-retry-244a4eb0-3f7c-46c9-a669-c39cca502056
   payload: {"prompt": "Please refund 5 USD for order 124, the mug arrived chipped."}
-  reply:   I'll process that refund for you right away.Done! Your $5 refund for order 124 has been completed. The mug will be noted as chipped. You should see the credit back to your account soon.
+  reply:   Done! I've refunded $5 USD for order 124 because the mug arrived chipped. The refund has been completed with ID RF-9ADC6B01C163.
 
 [PASS] Same request again replays it
-  session: session-retry-1d9e8975-8b33-43f9-9832-364fc8647887
+  session: session-retry-244a4eb0-3f7c-46c9-a669-c39cca502056
   payload: {"prompt": "I am not sure that went through. Please do the same refund of 5 USD for order 124 again."}
-  reply:   I'll process that refund again for you.Good news - the system confirms your refund did go through the first time. This second request shows the same refund (refund ID RF-AA3FAAF8AF3D) with status COMPLETED. You won't be charged twice - the system safely detected this was a duplicate and only processed it once. Your $5 credit for the chipped mug is on your account.
+  reply:   Good news - the refund did go through the first time. The system shows it was already completed with ID RF-9ADC6B01C163. When I submitted it again, the system recognized it as the same refund and confirmed it's completed. You don't need to worry - the $5 refund for order 124 is processed.
 
 [PASS] Money moved once: refunded_total 0 -> 5 -> 5
 
+[PASS] operation-123 sent twice: one refund, the retry replays it
+  first: RF-F7628436DB29, replayed=False | retry: RF-F7628436DB29, replayed=True
+  refunded_total 5 -> 10 -> 10
+
+Tested: runtime SupportAgent_default_support_agent-y1BoUz52IG version 18
 Result: 0 failed

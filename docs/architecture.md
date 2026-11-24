@@ -106,7 +106,7 @@ sequenceDiagram
     RT->>MEM: save the turn as events
 ```
 
-With 700 USD, step 13 saves the refund as `PENDING_APPROVAL` instead, holds the amount on the order and starts the review; Step Functions emails the approver and the staff app shows it ([screenshots](evidence/screenshots)). With 5,000 USD the prompt makes the model refuse, and if it asked anyway, step 11 would deny it: Cedar finds no permit and denies by default.
+With 700 USD, step 13 saves the refund as `PENDING_APPROVAL` instead, holds the amount on the order and starts the review; Step Functions emails the approver and the staff app shows it ([screenshots](evidence/screenshots)). With 5,000 USD the model still calls the tool, and step 11 denies it: Cedar finds no permit and denies by default. The agent records `POLICY_DENIED`, does not retry, and offers to escalate.
 
 ## State
 
@@ -154,7 +154,7 @@ The agent never answers from memory about orders or refunds: Memory keeps prefer
 | Outbound | agent to Bedrock and Memory | the runtime's execution role | temporary IAM credentials |
 | Staff | approver to AWS | their own IAM identity | their own profile |
 
-**Inbound** authentication answers "who is calling the agent"; **outbound** answers "how does the agent prove itself to the services it calls". The customer's token never reaches the Gateway, and the agent's machine token cannot call the Runtime.
+**Inbound** authentication answers "who is calling the agent"; **outbound** answers "how does the agent prove itself to the services it calls". The customer's token never reaches the Gateway, and the agent's machine token cannot call the Runtime. The Gateway therefore sees the agent, not the customer: Cedar and the Lambdas rely on the `customer_id` the agent's code takes from the customer's token ([security.md](security.md), remaining risks).
 
 ## Authorization
 
@@ -167,11 +167,11 @@ The agent never answers from memory about orders or refunds: Memory keeps prefer
 | Refund review | refunds that bring an order's refunds to 500 USD or more wait for a person |
 | IAM | each function and role can touch only what it needs |
 
-A system prompt is not enough because the model's output is untrusted: an injected instruction, a misread amount or a bug can make it ask for anything. The prompt only shapes good behavior; the Gateway policy and the Lambdas decide, whatever the model asks. The failure drills found exactly such a case: the model refunded 20 USD from "minus 5 dollars" until the code check was added ([failure-scenarios.md](failure-scenarios.md)).
+A system prompt is not enough because the model's output is untrusted: an injected instruction, a misread amount or a bug can make it ask for anything. The prompt only shapes good behavior and does not even state the refund limit; the Gateway policy and the Lambdas decide, whatever the model asks. The failure drills found exactly such a case: the model refunded 20 USD from "minus 5 dollars" until the code check was added ([failure-scenarios.md](failure-scenarios.md)).
 
 ## Failure handling, retries and idempotency
 
-**Errors are structured.** Tool Lambdas never raise to Gateway; they return `{"ok": false, "error": {"code", "message", "retryable"}}` ([responses.py](../backend/common/responses.py)). The entrypoint returns fixed error codes (`MISSING_SESSION`, `UNAUTHENTICATED`, `SESSION_FORBIDDEN`, `INVALID_REQUEST`, `TOOLS_UNAVAILABLE`, `INTERNAL_ERROR`) and never internal details.
+**Errors are structured.** Tool Lambdas never raise to Gateway; they return `{"ok": false, "error": {"code", "message", "retryable"}}` ([responses.py](../backend/common/responses.py)). An unexpected exception becomes a non-retryable `INTERNAL_ERROR`, with the stack trace only in the log ([dispatch.py](../backend/common/dispatch.py)). The entrypoint returns fixed error codes (`MISSING_SESSION`, `UNAUTHENTICATED`, `SESSION_FORBIDDEN`, `INVALID_REQUEST`, `TOOLS_UNAVAILABLE`, `INTERNAL_ERROR`) and never internal details.
 
 **Retryable is not the same as safe to retry.** An error is retryable when it is transient (throttling, timeouts, `BACKEND_UNAVAILABLE`, Gateway's masked Lambda timeout). An operation is safe to retry when repeating it cannot do harm: reads always, and `refund_customer` only because every call carries an idempotency key computed by the agent's code. `RetryHook` retries only when both are true: 3 attempts with full-jitter exponential backoff ([reliability.py](../app/support_agent/reliability.py)). A Cedar deny is a decision, never retried.
 
@@ -215,7 +215,7 @@ Two deployables, each from code:
 **Versions.** Every `agentcore deploy` that changes the agent creates a new immutable Runtime version (version 16 at the time of writing). The `DEFAULT` endpoint follows the latest version; a named endpoint points at a fixed version. Guardrail versions are immutable too, and old ones are retained.
 
 **Safe rollout.**
-1. CI runs lint, formatting, 247 unit tests and `cdk synth` on every push.
+1. CI runs lint, formatting, 279 unit tests and `cdk synth` on every push.
 2. Diff the synthesized CloudFormation against the deployed stack before deploying; AgentCore policies have no dry run.
 3. Deploy, then run the scenario scripts and the evaluations against the new version.
 4. In production, clients call a named endpoint (`agentcore add runtime-endpoint --runtime support_agent --name prod --version N`), not `DEFAULT`. A new version is tested on `DEFAULT` or a `staging` endpoint, then `prod` is moved to it.

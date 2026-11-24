@@ -1,4 +1,5 @@
 # Checks AgentCore Memory: a preference told in one session is recalled in a new session, and not by another user.
+# Clears the customer's stored preferences first, so a recall can only come from this run.
 # Usage: .\scripts\test_memory.ps1 -Email alex.morgan@example.com [-OtherEmail sam.rivera@example.com] [-OutFile docs\evidence\memory-across-sessions.txt]
 param(
     [Parameter(Mandatory = $true)][string]$Email,
@@ -11,13 +12,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "agent_client.ps1")
+& uv run python (Join-Path $PSScriptRoot "clear_preferences.py") --email $Email --yes | Out-Null
 Initialize-AgentClient -Runtime $Runtime -Email $Email
 
 Write-Log ("Memory across sessions, {0}, signed in as {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Email)
 Write-Log ""
 
 $question = '{"prompt": "What AWS region do I prefer?"}'
-Assert-Reply "Session 1: customer states a preference" (New-SessionId "memory-1") "{`"prompt`": `"Please remember that my preferred AWS region is $Region.`"}" { param($r) -not $r.StartsWith("ERROR") }
+# The preference must be acknowledged, not refused as out of scope.
+$refusal = "can't help|cannot help|not something I can|outside|only help with|aren't something"
+Assert-Reply "Session 1: customer states a preference and the agent acknowledges it" (New-SessionId "memory-1") "{`"prompt`": `"Please remember that my preferred AWS region is $Region.`"}" { param($r) (-not $r.StartsWith("ERROR")) -and ($r -notmatch $refusal) }
 
 # Long-term records are extracted asynchronously, so ask again in fresh sessions until they appear.
 $deadline = (Get-Date).AddSeconds($MaxWaitSeconds)

@@ -16,6 +16,9 @@ dev = [
     "boto3>=1.35",
     "httpx>=0.28",
     "opentelemetry-sdk>=1.30",
+    # The agent's own packages, so hooks.py and main.py can be unit tested.
+    "strands-agents>=1.62.0,<2.0.0",
+    "bedrock-agentcore[strands-agents]>=1.18.1,<2.0.0",
 ]
 
 [tool.uv]
@@ -47,6 +50,8 @@ select = [
 testpaths = ["tests/unit"]
 pythonpath = ["app/support_agent", "backend", "ui"]
 addopts = "-ra --strict-markers"
+# A deprecation inside the bedrock_agentcore library, not in this project's code.
+filterwarnings = ["ignore:Support for class-based `config` is deprecated:DeprecationWarning"]
 markers = [
     "integration: hits real AWS resources; excluded from CI",
 ]

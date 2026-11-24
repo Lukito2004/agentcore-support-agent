@@ -39,13 +39,13 @@ Every log below was produced by a script in [scripts](scripts) against the deplo
 | Memory across two sessions | "My preferred AWS region is eu-west-1" recalled in a new session, not by another customer | [memory-across-sessions.txt](docs/evidence/memory-across-sessions.txt) |
 | Identity / IAM, no long-lived credentials | Cognito JWT inbound; AgentCore Identity OAuth outbound; IAM roles everywhere else | [security.md](docs/security.md) |
 | Refund ≤ 1,000 USD allowed | Cedar permit on `amount_cents <= 100000` | [policy-enforced.txt](docs/evidence/policy-enforced.txt) |
-| Refund > 1,000 USD denied | a direct `refund(5000)` to the Gateway: `Tool Execution Denied`, denied by default | [policy-enforced.txt](docs/evidence/policy-enforced.txt) |
+| Refund > 1,000 USD denied | the model's own `refund(5000)` and a direct one to the Gateway are both denied by Cedar by default; the trace shows `POLICY_DENIED` | [policy-enforced.txt](docs/evidence/policy-enforced.txt), [screenshot](docs/evidence/screenshots/policy-denied.png) |
 | Prompt injection cannot bypass authorization | Guardrail, untrusted-content prompt, then Cedar, Lambda cap and human review regardless | [policy-enforced.txt](docs/evidence/policy-enforced.txt), [guardrail.txt](docs/evidence/guardrail.txt) |
-| Retry does not duplicate a refund | idempotency key from code, conditional DynamoDB transaction, replay; the brief's `operation-123` in [unit tests](tests/unit/test_refund_tool.py) | [refund-retry-no-duplicate.txt](docs/evidence/refund-retry-no-duplicate.txt) |
+| Retry does not duplicate a refund | idempotency key from code, conditional DynamoDB transaction, replay; the brief's `operation-123` sent twice to the deployed Gateway and in [unit tests](tests/unit/test_refund_tool.py) | [refund-retry-no-duplicate.txt](docs/evidence/refund-retry-no-duplicate.txt) |
 | Errors and retries with backoff | structured tool errors, full-jitter backoff for retryable and safe calls, loop guard | [failure-drills.txt](docs/evidence/failure-drills.txt) |
-| At least 3 failure scenarios | tool timeout, HTTP 500, LLM loop, invalid parameters, malformed session ID | [failure-drills.txt](docs/evidence/failure-drills.txt) |
+| At least 3 failure scenarios | tool timeout, HTTP 500, Lambda crash, LLM loop, invalid parameters, malformed session ID, wrong tool selection | [failure-drills.txt](docs/evidence/failure-drills.txt), [wrong-tool-drill.txt](docs/evidence/wrong-tool-drill.txt) |
 | Failures found with traces | six real failures found in traces and fixed, with before and after traces | [failure-scenarios.md](docs/failure-scenarios.md), [before](docs/evidence/failure-drills-before-fixes.txt) |
-| Least privilege | one role per function with exact actions; gaps documented | [security.md](docs/security.md) |
+| Least privilege | one role per function with exact actions; explicit Denies narrow the CLI-generated runtime role; remaining gaps documented | [security.md](docs/security.md) |
 | Policy + Cedar | default deny, `LOG_ONLY` then `ENFORCE` | [policies](policies), [policy-log-only.txt](docs/evidence/policy-log-only.txt) |
 
 Beyond the brief: a Bedrock Guardrail, human review of large refunds, AgentCore Evaluations with a custom evaluator ([evaluations.md](docs/evaluations.md)), a chat app and a staff app, and CI.
@@ -69,7 +69,7 @@ infra/               CDK app for the business backend
 ui/                  Streamlit chat app and staff app
 scripts/             setup, test, trace and evaluation scripts
 evals/               evaluation scenarios
-tests/unit/          247 unit tests; run without AWS
+tests/unit/          279 unit tests; run without AWS
 docs/                design, security, setup, failures, evaluations, evidence
 ```
 

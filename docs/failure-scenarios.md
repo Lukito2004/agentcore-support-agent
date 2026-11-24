@@ -33,7 +33,7 @@ The agent adds span events for every decision its code makes ([hooks.py](../app/
 
 ## How to run the drills
 
-Fault injection is off by default. It only exists in the read-tools Lambda and only for drill order IDs ([faults.py](../backend/common/faults.py)): `900` sleeps past the 10 s Lambda timeout, `901` always fails with a retryable error, `902` is always "processing".
+Fault injection is off by default. It only exists in the read-tools Lambda and only for drill order IDs ([faults.py](../backend/common/faults.py)): `900` sleeps past the 10 s Lambda timeout, `901` always fails with a retryable error, `902` is always "processing", `903` raises an unhandled exception, as a crashing Lambda would.
 
 ```powershell
 cd infra
@@ -44,17 +44,27 @@ cd infra
 cdk deploy
 ```
 
-The script runs five drills, checks what the customer is told and that no money moved, then prints each drill's trace tree.
+The script runs six drills, checks what the customer is told and that no money moved, then prints each drill's trace tree.
+
+The wrong-tool drill changes the Gateway's tool schema instead, so it is switched on and off with the agent deploy:
+
+```powershell
+uv run python scripts/toggle_wrong_tool_drill.py on
+agentcore deploy
+powershell -ExecutionPolicy Bypass -File .\scripts\test_wrong_tool.ps1 -Email alex.morgan@example.com -OutFile docs\evidence\wrong-tool-drill.txt
+uv run python scripts/toggle_wrong_tool_drill.py off
+agentcore deploy
+```
 
 ## The brief's failure types
 
 | Failure type | How it is exercised | What the trace shows |
 |---|---|---|
 | Tool timeout | drill order `900`: the tool Lambda sleeps past its 10 s timeout | `execute_tool` spans of about 10 s with status ERROR "Please retry later", `support.tool_retry` between them (failure 3 below) |
-| HTTP 500 | drill order `901`: the backend always fails with a retryable `BACKEND_UNAVAILABLE` | three `execute_tool` attempts whose result is `ok: false`, `support.tool_result` with `retryable=True` (failure 4) |
+| HTTP 500 | drill order `901`: the backend always fails with a retryable `BACKEND_UNAVAILABLE`; drill order `903`: the Lambda crashes with an unhandled exception | `901`: three `execute_tool` attempts whose result is `ok: false`, `support.tool_result` with `retryable=True` (failure 4). `903`: three `execute_tool` spans of about 200 ms with status ERROR, because Gateway reports the crash as "Please retry later"; the read is retried, then reported honestly |
 | LLM loop | drill order `902`: the status is always "processing" and the customer asks to keep checking | two identical `execute_tool` spans, then `support.loop_guard_blocked` on the third (failure 6) |
 | Invalid parameters | "Refund minus 5 dollars"; a malformed session ID; Lambda argument checks in unit tests | before the fix, `refund_customer` with `amount 20` and `outcome=ok`; now no refund call, or `support.refund_amount_blocked`; `support.request_failed: INVALID_REQUEST` (failures 1 and 5) |
-| Wrong tool selection | every tool call of the 10 evaluation scenarios is scored by `ToolSelectionAccuracy` and `TrajectoryInOrderMatch` | the `execute_tool` span names against the request; both scored 1.00 ([evaluations.md](evaluations.md)). A tool the policy does not permit is denied by default at the Gateway |
+| Wrong tool selection | the wrong-tool drill swaps the descriptions of `get_customer` and `get_order_status` ([toggle_wrong_tool_drill.py](../scripts/toggle_wrong_tool_drill.py)) and asks "Why is my order 123 delayed?" in 5 sessions; every tool call of the 10 evaluation scenarios is scored by `ToolSelectionAccuracy` | the `execute_tool` span names against the request. The drill found 0 wrong picks in 5: Haiku chose by tool name, not description ([wrong-tool-drill.txt](evidence/wrong-tool-drill.txt)). `ToolSelectionAccuracy` scored 1.00 ([evaluations.md](evaluations.md)). A tool the policy does not permit is denied by default at the Gateway |
 
 ## Summary
 
@@ -175,7 +185,9 @@ The loop guard cancelled the third identical call, and the agent answered with t
 - **Retryable backend errors** get 3 attempts with full-jitter backoff between them (random waits up to 0.5 s, then up to 1 s), then are reported honestly. The agent never invents an order status.
 - **Runaway tool loops** are cut off after 2 identical calls or 8 calls per turn, whatever the model wants.
 - **Duplicate refunds** are impossible: the idempotency key is computed in code and the refund is a conditional DynamoDB transaction ([refund-retry-no-duplicate.txt](evidence/refund-retry-no-duplicate.txt)).
-- **Refunds above 1,000 USD and prompt injection** are denied by the Cedar policy at Gateway ([policy-enforced.txt](evidence/policy-enforced.txt)).
+- **Refunds above 1,000 USD and prompt injection** are denied by the Cedar policy at Gateway. The model's own `refund(5000)` reaches the Gateway and its trace shows `POLICY_DENIED`, which is never retried ([policy-enforced.txt](evidence/policy-enforced.txt)).
+- **A crashing tool Lambda** (drill `903`) is retried 3 times, then reported honestly. An error inside the tool code is caught and returned as a non-retryable `INTERNAL_ERROR` ([dispatch.py](../backend/common/dispatch.py)); only a crash outside it, such as this drill or running out of memory, reaches Gateway. Retrying that is safe: reads can be repeated, and a refund carries its idempotency key.
+- **Misleading tool descriptions** (the wrong-tool drill) did not make Haiku pick the wrong tool in 5 runs. If one did, the reply would only lack the answer: `get_customer` cannot reveal another customer, because `customer_id` is overwritten from the token.
 
 ## Remaining risks
 
@@ -183,11 +195,3 @@ The loop guard cancelled the third identical call, and the agent answered with t
 - The unguarding overrides a private Strands method. If Strands renames it, the override stops applying and the context is guarded again: more blocking, never less.
 - The amount check matches digits only. "Twenty dollars" is refused and the customer is asked to type the number, which costs one extra turn.
 - Guardrail detectors are probabilistic. The guardrail tests run real prompts, but a new false positive can still appear; traces show it as `guardrail intervened`.
-
-## Console screenshots
-
-Captured from CloudWatch GenAI Observability for the sessions in [failure-drills.txt](evidence/failure-drills.txt), stored in `docs/evidence/screenshots/`:
-
-- `slow-tool-retries.png`: session `session-drill-slow-a3345cec-...`, three failed `execute_tool` spans
-- `loop-guard.png`: session `session-drill-loop-161d1101-...`, the `support.loop_guard_blocked` event
-- `guardrail-before-fix.png`: session `session-drill-failing-57829b07-...`, the model span ending in `guardrail_intervened`

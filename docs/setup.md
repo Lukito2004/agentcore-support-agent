@@ -109,8 +109,8 @@ Each script signs in (password prompt), prints PASS or FAIL per check and can sa
 | `test_sessions.ps1` | sign-in required, session isolation, payload validation |
 | `test_scenarios.ps1` | order status, customer info, another customer's order, a small refund |
 | `test_memory.ps1 -OtherEmail sam.rivera@example.com` | a preference recalled in a new session, not by another customer |
-| `test_policy.ps1 -Mode enforced` | 100 USD allowed, 5,000 USD denied, injection, a direct Gateway call denied |
-| `test_reliability.ps1` | the same refund twice moves money once |
+| `test_policy.ps1 -Mode enforced` | 100 USD allowed; the model's 5,000 USD request denied by the Gateway, checked in its trace; the brief's "ignore previous instructions" sentence; injection; a direct Gateway call denied |
+| `test_reliability.ps1` | the same refund twice moves money once, including the brief's `operation-123` key sent twice to the Gateway |
 | `test_approval.ps1` | review from 500 USD, approve, reject, optional timeout with `-WaitForTimeout` |
 | `test_guardrail.ps1` | attacks and secrets blocked, no false positives |
 
@@ -156,6 +156,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\test_failures.ps1 -Email alex
 cd infra
 cdk deploy
 cd ..
+```
+
+The wrong-tool drill swaps two tool descriptions at the Gateway, and back again afterwards:
+
+```powershell
+uv run python scripts/toggle_wrong_tool_drill.py on
+agentcore deploy
+powershell -ExecutionPolicy Bypass -File .\scripts\test_wrong_tool.ps1 -Email alex.morgan@example.com -OutFile docs\evidence\wrong-tool-drill.txt
+uv run python scripts/toggle_wrong_tool_drill.py off
+agentcore deploy
 ```
 
 Details: [evaluations.md](evaluations.md), [failure-scenarios.md](failure-scenarios.md).

@@ -46,7 +46,7 @@ function Write-Check([string]$Name, [bool]$Ok, [string]$Detail) {
 
 # Asks for a refund that needs review, then returns the one pending refund it created.
 function Request-ReviewedRefund([string]$Label, [string]$Prompt, [double]$Amount, [string]$ExpectedTotals) {
-    Assert-Reply "$Label waits for review" (New-SessionId $Label) $Prompt { param($r) $r -match "review|approv" }
+    Assert-Reply "$Label waits for review" (New-SessionId $Label) $Prompt { param($r) ($r -match "review|approv") -and (Test-NoPromise $r) }
     $pending = Get-PendingRefunds
     $totals = Get-Totals
     $ok = ($pending.Count -eq 1) -and ([double]$pending[0].amount -eq $Amount) -and ($totals -eq $ExpectedTotals)
@@ -65,7 +65,7 @@ Write-Log ("Refund approval, {0}, signed in as CUST-1001, order 129 (899.00 USD)
 Write-Log ""
 
 # 1. Below the threshold: no review.
-Assert-Reply "100 USD refund is answered" (New-SessionId "small") '{"prompt": "Please refund 100 USD for order 129, the vacuum arrived scratched."}' { param($r) -not $r.StartsWith("ERROR") }
+Assert-Reply "100 USD refund is answered" (New-SessionId "small") '{"prompt": "Please refund 100 USD for order 129, the vacuum arrived scratched."}' { param($r) (-not $r.StartsWith("ERROR")) -and (Test-NoPromise $r) }
 $totals = Get-Totals
 Write-Check "100 USD refund completed right away" (($totals -eq "refunded 100, pending 0") -and ((Get-PendingRefunds).Count -eq 0)) "order 129: $totals"
 

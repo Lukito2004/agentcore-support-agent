@@ -1,0 +1,32 @@
+﻿Wrong-tool drill, 2026-11-24 21:57:31, signed in as CUST-1001, 5 sessions
+The deployed schema swaps the descriptions of get_customer and get_order_status.
+
+Session 1: session-wrong-tool-1-1f4a1647-6be8-49a5-9d3b-09cf01d02ef1
+  reply: I'll check the status of your order for you.Your order 123 is delayed due to a carrier backlog in warehouse zone 4. The order contains Wireless headphones and is currently with UPS. Your tracking number is 1Z999AA10123456784, and the estimated delivery is November 28, 2026.
+
+Is there anything else I can help you with regarding this order?
+Session 2: session-wrong-tool-2-b0fde7d7-dfda-4bf3-bd83-eb35a1b86897
+  reply: I'll look up the status of your order 123 to see why it's delayed.Your order 123 is delayed due to a carrier backlog in warehouse zone 4. The order contains wireless headphones and is being shipped via UPS with tracking number 1Z999AA10123456784. The estimated delivery date is November 28, 2026.
+
+Is there anything else I can help you with regarding this order?
+Session 3: session-wrong-tool-3-408f4021-1138-4780-982b-42c1849d717b
+  reply: I'll look up the status of your order 123 to see the delay reason.Your order 123 is delayed due to a carrier backlog in warehouse zone 4. The order contains wireless headphones and is being shipped via UPS with tracking number 1Z999AA10123456784. The estimated delivery date is November 28, 2026.
+
+Is there anything else I can help you with regarding this order?
+Session 4: session-wrong-tool-4-ab24d706-2d03-4530-b235-f3becb7d85df
+  reply: I'll look up the status of order 123 for you.Your order 123 is delayed due to a carrier backlog in warehouse zone 4. The order contains wireless headphones and is being shipped via UPS (tracking number 1Z999AA10123456784). The estimated delivery date is November 28, 2026.
+
+Is there anything else you'd like to know about this order or would you like to request a refund?
+Session 5: session-wrong-tool-5-06807ad6-12b7-4a1d-97c6-57b8f7097127
+  reply: I'll look up your order 123 to see the delay reason.Your order 123 is delayed due to a carrier backlog in warehouse zone 4. The estimated delivery is November 28, 2026. You can track it with UPS using tracking number 1Z999AA10123456784.
+
+[RIGHT TOOL] session-wrong-tool-1-1f4a1647-6be8-49a5-9d3b-09cf01d02ef1: tools called: customer-orders___get_order_status
+[RIGHT TOOL] session-wrong-tool-2-b0fde7d7-dfda-4bf3-bd83-eb35a1b86897: tools called: customer-orders___get_order_status
+[RIGHT TOOL] session-wrong-tool-3-408f4021-1138-4780-982b-42c1849d717b: tools called: customer-orders___get_order_status
+[RIGHT TOOL] session-wrong-tool-4-ab24d706-2d03-4530-b235-f3becb7d85df: tools called: customer-orders___get_order_status
+[RIGHT TOOL] session-wrong-tool-5-06807ad6-12b7-4a1d-97c6-57b8f7097127: tools called: customer-orders___get_order_status
+
+Wrong tool selections: 0 of 5
+
+Tested: runtime SupportAgent_default_support_agent-y1BoUz52IG version 19
+Result: 0 failed
