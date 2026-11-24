@@ -61,9 +61,29 @@ function Assert-Reply([string]$Name, [string]$SessionId, [string]$Payload, [scri
 }
 
 # Memory only accepts letters, digits, - and _ in session IDs, so other characters become -.
+# Promises no tool can back: when money arrives, or that someone will get in touch.
+$script:PromisePattern = "should appear|will appear|appear in your account|reflected in your account|business days|be notified|hear back"
+
+function Test-NoPromise([string]$Reply) { return $Reply -notmatch $script:PromisePattern }
+
+# The session's trace tree from CloudWatch; spans arrive a minute or two after a request.
+function Get-SessionTrace([string]$SessionId, [int]$Tries = 6) {
+    for ($try = 1; $try -le $Tries; $try++) {
+        # Not 2>&1: Windows PowerShell 5.1 turns native stderr into errors that stop the script.
+        $tree = & uv run python (Join-Path $PSScriptRoot "find_traces.py") $SessionId | Out-String
+        if ($LASTEXITCODE -eq 0) { return $tree }
+        Start-Sleep -Seconds 30
+    }
+    return "no spans found for $SessionId"
+}
+
 function New-SessionId([string]$Label) { "session-$($Label -replace '[^A-Za-z0-9_-]', '-')-$([guid]::NewGuid())" }
 
 function Complete-AgentTest([string]$OutFile) {
+    if (-not $script:AgentLocal) {
+        # Stamps the log with the deployed version it tested.
+        Write-Log ("Tested: " + (& uv run python (Join-Path $PSScriptRoot "runtime_version.py") | Out-String).Trim())
+    }
     Write-Log ("Result: {0} failed" -f $script:AgentFailures)
     if ($OutFile) {
         New-Item -ItemType Directory -Force (Split-Path $OutFile) | Out-Null

@@ -8,11 +8,18 @@ from common.errors import ToolError
 SLOW_ORDER = "900"  # sleeps past the Lambda timeout
 FAILING_ORDER = "901"  # always fails with a retryable error
 STUCK_ORDER = "902"  # always "processing", which tempts the model to poll in a loop
+CRASH_ORDER = "903"  # an unhandled error: the Lambda fails, the Gateway sees a server fault
 SLOW_SECONDS = 15
 
 
 def enabled() -> bool:
     return os.environ.get("FAULT_INJECTION") == "enabled"
+
+
+def crash_if_drill(event: object) -> None:
+    """Raise for the crash drill order, before run_tool can turn it into a structured error."""
+    if enabled() and isinstance(event, dict) and event.get("order_id") == CRASH_ORDER:
+        raise RuntimeError("drill: unhandled crash in the read-tools Lambda")
 
 
 def inject(customer_id: str, order_id: str) -> dict | None:

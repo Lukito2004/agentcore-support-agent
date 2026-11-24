@@ -41,6 +41,7 @@ def cell(result: dict) -> tuple[str, float | None]:
 def summarize(data: dict) -> str:
     scenario_of = {s["sessionId"]: s["exampleId"] for s in data.get("sessions", [])}
     scenarios = [s["exampleId"] for s in data.get("sessions", [])]
+    seen: list[str] = []
     evaluators: list[str] = []
     cells: dict[tuple[str, str], tuple[str, float | None]] = {}
     scores: dict[str, list[float]] = defaultdict(list)
@@ -52,6 +53,8 @@ def summarize(data: dict) -> str:
             evaluators.append(evaluator)
         session = result.get("context", {}).get("spanContext", {}).get("sessionId")
         scenario = scenario_of.get(session, session)
+        if scenario not in seen:
+            seen.append(scenario)
         shown, value = cell(result)
         previous = cells.get((scenario, evaluator))
         # Keep the worst trace of a multi-turn scenario.
@@ -65,13 +68,16 @@ def summarize(data: dict) -> str:
                     f"- **{scenario}**, {evaluator} = {shown}: {explanation[:EXPLANATION_CHARS]}..."
                 )
 
-    lines = [
-        f"Sessions evaluated: {data.get('sessionsEvaluated')} of {data.get('sessionsRequested')}",
-        "",
+    lines = []
+    if "sessionsRequested" in data:
+        evaluated = f"{data.get('sessionsEvaluated')} of {data['sessionsRequested']}"
+        lines += [f"Sessions evaluated: {evaluated}", ""]
+    lines += [
         "| Scenario | " + " | ".join(evaluators) + " |",
         "|---|" + "---|" * len(evaluators),
     ]
-    for scenario in scenarios:
+    # Evaluating existing sessions lists no scenarios; use session IDs in order instead.
+    for scenario in scenarios or seen:
         # No result: a tool-level evaluator on a scenario without tool calls.
         row = [cells.get((scenario, e), ("n/a", None))[0] for e in evaluators]
         lines.append(f"| {scenario} | " + " | ".join(row) + " |")

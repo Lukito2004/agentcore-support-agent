@@ -62,4 +62,5 @@ TOOLS: dict[str, Tool] = {
 
 
 def lambda_handler(event, context) -> dict:
+    faults.crash_if_drill(event)
     return run_tool(TOOLS, event, context, log)

@@ -1,46 +1,43 @@
-﻿Runtime session test, 2026-11-24 03:47:56, target: deployed runtime
+﻿Runtime session test, 2026-11-24 22:06:38, target: deployed runtime
 
 [PASS] Call without a sign-in token is rejected
-  session: session-a-67c1bad2-bff9-4cf5-af34-f3eb3f7aaff8
+  session: session-a-c1538294-9bde-402f-9c3a-7ca080912152
   payload: {"prompt": "hi"}
   reply:   CLI ERROR: request was not accepted
 
 [PASS] Agent knows the signed-in customer
-  session: session-a-67c1bad2-bff9-4cf5-af34-f3eb3f7aaff8
+  session: session-a-c1538294-9bde-402f-9c3a-7ca080912152
   payload: {"prompt": "Which customer ID am I signed in as?"}
-  reply:   You're signed in as **CUST-1001**.
-
-How can I help you with your account, orders, or refunds today?
+  reply:   You are signed in as customer CUST-1001.
 
 [PASS] Session A mentions an order
-  session: session-a-67c1bad2-bff9-4cf5-af34-f3eb3f7aaff8
-  payload: {"prompt": "Hi, I have a question about my order ORD-4510. Please just confirm the order number for now."}
-  reply:   I can see you're asking about **ORD-4510**. 
+  session: session-a-c1538294-9bde-402f-9c3a-7ca080912152
+  payload: {"prompt": "Hi, I have a question about my order ORD-5554. Please just confirm the order number for now."}
+  reply:   I can confirm that you're asking about order ORD-5554. 
 
-To help you with details about this order, I'll need to look it up in our system. What would you like to know about it?
+Would you like me to look up the status of that order for you?
 
 [PASS] Session A recalls it (same microVM)
-  session: session-a-67c1bad2-bff9-4cf5-af34-f3eb3f7aaff8
+  session: session-a-c1538294-9bde-402f-9c3a-7ca080912152
   payload: {"prompt": "Which order number did I mention earlier in this conversation?"}
-  reply:   You mentioned **ORD-4510** earlier in this conversation.
-
-What can I help you with regarding that order?
+  reply:   You mentioned order number ORD-5554 earlier in this conversation.
 
 [PASS] Session B does not know it (new microVM)
-  session: session-b-bc34622c-247f-49fd-8e33-f2247d576691
+  session: session-b-e7415ead-e74c-491e-9b5c-89c73b8bd63a
   payload: {"prompt": "Which order number did I mention earlier in this conversation?"}
-  reply:   I don't see any earlier messages in our conversation history ΓÇô this is the start of our chat. So you haven't mentioned an order number yet.
+  reply:   I don't see any order number mentioned earlier in our conversation - this is the start of our chat. 
 
-What can I help you with today? I'm here to assist with your orders, account information, or refunds.
+Is there a specific order you'd like me to look up? If you give me the order ID, I can check its status for you.
 
 [PASS] Client-supplied actorId is rejected
-  session: session-b-bc34622c-247f-49fd-8e33-f2247d576691
+  session: session-b-e7415ead-e74c-491e-9b5c-89c73b8bd63a
   payload: {"prompt": "hi", "actorId": "admin"}
   reply:   ERROR INVALID_REQUEST: unsupported fields: actorId
 
 [PASS] Non-string prompt is rejected
-  session: session-b-bc34622c-247f-49fd-8e33-f2247d576691
+  session: session-b-e7415ead-e74c-491e-9b5c-89c73b8bd63a
   payload: {"prompt": 42}
   reply:   ERROR INVALID_REQUEST: prompt must be a string
 
+Tested: runtime SupportAgent_default_support_agent-y1BoUz52IG version 19
 Result: 0 failed

@@ -1,152 +1,235 @@
-﻿Failure drills, 2026-11-24 17:09:42, signed in as CUST-1001
+﻿Failure drills, 2026-11-24 21:48:42, signed in as CUST-1001
 
 [PASS] Slow tool: Lambda timeout is retried, then reported honestly
-  session: session-drill-slow-a3345cec-15ba-4ebc-a892-2c03c383fcf0
+  session: session-drill-slow-de51ec71-052e-4658-9a4d-41dd8ba1f4d8
   payload: {"prompt": "What is the status of my order 900?"}
-  reply:   I'll look up the status of order 900 for you.I'm having trouble looking up that order right now. Can you try again in a moment, or let me know if there's anything else I can help you with?
+  reply:   I'll look up the status of your order 900.I'm sorry, I'm having trouble looking up that order right now. Please try again in a moment, or let me know if you'd like to check on a different order.
 
 [PASS] Failing backend: retryable error is retried 3 times, then reported
-  session: session-drill-failing-54537673-3241-45a3-971a-b3b1b5d4b481
+  session: session-drill-failing-2adeaebe-b0d7-4026-8253-5d7c30e7de9a
   payload: {"prompt": "What is the status of my order 901?"}
-  reply:   I'll look up the status of order 901 for you.I'm having trouble reaching the system right now to look up your order. This is a temporary issue. Please try again in a moment, or let me know if there's anything else I can help you with.
+  reply:   I'm having trouble looking up that order right now because the system is temporarily unavailable. Please try again in a moment, or let me know if there's anything else I can help you with.
+
+[PASS] Crashing backend: an unhandled Lambda error is retried, then reported honestly
+  session: session-drill-crash-80da9645-1f0e-4a53-a5be-6026de65c2b4
+  payload: {"prompt": "What is the status of my order 903?"}
+  reply:   I'll check the status of your order 903 for you.I'm having trouble looking up that order right now. Please try again in a moment, or let me know if there's anything else I can help you with.
 
 [PASS] Polling loop: the loop guard stops repeated identical calls
-  session: session-drill-loop-161d1101-f1dc-45d8-922f-ed6aea6704fb
+  session: session-drill-loop-ddd9e378-55ad-4bfc-a42a-d7473cc93538
   payload: {"prompt": "Check the status of my order 902. If it is still processing, check it again right away, up to 5 times, then tell me the final status."}
-  reply:   I'll check the status of order 902 for you.Your order is currently processing. Let me check again.Still processing. Checking again...I apologize - I'm unable to repeatedly check the same order in quick succession due to system limitations. Based on my attempts, order 902 shows a status of **PROCESSING** with a note that "The status is being updated. Check again in a moment."
+  reply:   I'll check the status of order 902 for you.The order is still processing. Let me check again.Still processing. Checking again.I've checked your order 902 multiple times, and it remains in PROCESSING status. The system indicates "The status is being updated. Check again in a moment." This means the order is actively being processed and should move to the next status soon. I'm unable to check further right now as the system is handling the same request.
 
-This suggests the order status is still being finalized. I recommend checking back in a few moments or contacting support if you need an immediate update on the processing details.
+**Final status: PROCESSING**
+
+The order is on track and being updated. You may want to check back in a few moments for the next status update.
 
 [PASS] Invalid amount: no money moves, the agent asks for the exact amount
-  session: session-drill-invalid-36576541-bce1-4bed-8408-05e690460915
+  session: session-drill-invalid-6200930a-bcb6-4d1d-888b-d18e22b7345c
   refunded_total for order 124: 0 -> 0
-  reply:   I'd be happy to help you with a refund for order 124. However, I need to clarify the refund amount.
+  reply:   I'd be happy to help with a refund for the chipped mug. To process this, I need to know the exact refund amount in dollars.
 
-You mentioned "refund minus 5 dollars" - could you please tell me the exact amount you'd like refunded? For example, do you mean:
-- $5 total, or
-- Some other amount?
-
-Please type the exact dollar amount you'd like refunded, and I'll process it right away.
+You mentioned "minus 5 dollars" - could you please type the exact amount you'd like refunded? For example, if the mug cost $20 and you want $5 off, that would be $15, or if you want to refund $5, please confirm that amount.
 
 [PASS] Bad session ID: rejected as INVALID_REQUEST, not INTERNAL_ERROR
-  session: drill bad session id with spaces 3a27d90b-2aba-42a4-9ad2-6d34240f456e
+  session: drill bad session id with spaces f8414e76-c643-4421-a5d2-5888ffa68a28
   payload: {"prompt": "Hello"}
   reply:   ERROR INVALID_REQUEST: session ID must be 33-100 characters of letters, digits, - and _
 
 ===== Trace of drill: Slow tool =====
-Session session-drill-slow-a3345cec-15ba-4ebc-a892-2c03c383fcf0: 27 spans
+Session session-drill-slow-de51ec71-052e-4658-9a4d-41dd8ba1f4d8: 35 spans
 
-Trace 6b058c9b7f00de10689f0c2e3495551a
-  POST /invocations (35898 ms)
-    Bedrock AgentCore.GetResourceOauth2Token (78 ms)
-    mcp tools/list (222 ms)
-    invoke_agent Strands Agents (34994 ms)
-      Bedrock AgentCore.RetrieveMemoryRecords (165 ms)
-      execute_event_loop_cycle (33321 ms)
+Trace 6b05cdfd12f637c44338bde371ad81aa
+  POST /invocations (36043 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (91 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    POST (68 ms)
+    POST (59 ms)
+    POST (187 ms)
+    invoke_agent Strands Agents (35101 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (213 ms)
+      execute_event_loop_cycle (33231 ms)
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: retryable=True, error_code=TOOL_ERROR, attempt=1, tool=get_order_status, outcome=error
-          * support.tool_retry: tool=get_order_status, next_attempt=2, delay_s=0.24737964453099287
+          * support.tool_retry: tool=get_order_status, next_attempt=2, delay_s=0.4382927031770717
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: retryable=True, error_code=TOOL_ERROR, attempt=2, tool=get_order_status, outcome=error
-          * support.tool_retry: tool=get_order_status, next_attempt=3, delay_s=0.6663578157603949
+          * support.tool_retry: tool=get_order_status, next_attempt=3, delay_s=0.150662561713807
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: retryable=True, error_code=TOOL_ERROR, attempt=3, tool=get_order_status, outcome=error
-        chat (1242 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1230 ms)
-        execute_tool customer-orders___get_order_status (10189 ms)  <-- ERROR An internal error occurred. Please retry later.
-          mcp tools/call customer-orders___get_order_status (10188 ms)  <-- ERROR 
-        execute_tool customer-orders___get_order_status (10367 ms)  <-- ERROR An internal error occurred. Please retry later.
-          mcp tools/call customer-orders___get_order_status (10366 ms)  <-- ERROR 
-        execute_tool customer-orders___get_order_status (10374 ms)  <-- ERROR An internal error occurred. Please retry later.
-          mcp tools/call customer-orders___get_order_status (10373 ms)  <-- ERROR 
-      execute_event_loop_cycle (1347 ms)
-        chat (1276 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1275 ms)
+        chat (1373 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1361 ms)
+        execute_tool customer-orders___get_order_status (10204 ms)  <-- ERROR An internal error occurred. Please retry later.
+        execute_tool customer-orders___get_order_status (10358 ms)  <-- ERROR An internal error occurred. Please retry later.
+        execute_tool customer-orders___get_order_status (10349 ms)  <-- ERROR An internal error occurred. Please retry later.
+      execute_event_loop_cycle (1385 ms)
+        chat (1311 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1310 ms)
+    POST (10201 ms)
+    POST (10355 ms)
+    POST (10345 ms)
 
-Summary: error spans 6, tool errors 0, retries 2, loop guard blocks 0, failed requests 0
+Summary: error spans 3, tool errors 0, retries 2, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 0
 
 ===== Trace of drill: Failing backend =====
-Session session-drill-failing-54537673-3241-45a3-971a-b3b1b5d4b481: 27 spans
+Session session-drill-failing-2adeaebe-b0d7-4026-8253-5d7c30e7de9a: 35 spans
 
-Trace 6b058cc91dcd7dee49c953dc115bc79e
-  POST /invocations (6895 ms)
-    Bedrock AgentCore.GetResourceOauth2Token (65 ms)
-    mcp tools/list (208 ms)
-    invoke_agent Strands Agents (6015 ms)
-      Bedrock AgentCore.RetrieveMemoryRecords (210 ms)
-      execute_event_loop_cycle (3428 ms)
+Trace 6b05ce2a75a991d5329971970f484fba
+  POST /invocations (5836 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (76 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    POST (62 ms)
+    POST (49 ms)
+    POST (148 ms)
+    invoke_agent Strands Agents (4959 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (169 ms)
+      execute_event_loop_cycle (3135 ms)
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: retryable=True, error_code=BACKEND_UNAVAILABLE, attempt=1, tool=get_order_status, outcome=error
-          * support.tool_retry: tool=get_order_status, next_attempt=2, delay_s=0.028641963869052378
+          * support.tool_retry: tool=get_order_status, next_attempt=2, delay_s=0.2032486750774558
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: retryable=True, error_code=BACKEND_UNAVAILABLE, attempt=2, tool=get_order_status, outcome=error
-          * support.tool_retry: tool=get_order_status, next_attempt=3, delay_s=0.9198255737185381
+          * support.tool_retry: tool=get_order_status, next_attempt=3, delay_s=0.5686902943779572
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: retryable=True, error_code=BACKEND_UNAVAILABLE, attempt=3, tool=get_order_status, outcome=error
-        chat (1393 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1382 ms)
-        execute_tool customer-orders___get_order_status (422 ms)
-          mcp tools/call customer-orders___get_order_status (421 ms)  <-- tool returned BACKEND_UNAVAILABLE
-        execute_tool customer-orders___get_order_status (209 ms)
-          mcp tools/call customer-orders___get_order_status (208 ms)  <-- tool returned BACKEND_UNAVAILABLE
-        execute_tool customer-orders___get_order_status (221 ms)
-          mcp tools/call customer-orders___get_order_status (220 ms)  <-- tool returned BACKEND_UNAVAILABLE
-      execute_event_loop_cycle (2232 ms)
-        chat (2161 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (2159 ms)
+        chat (1331 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1318 ms)
+        execute_tool customer-orders___get_order_status (344 ms)  <-- tool returned BACKEND_UNAVAILABLE
+        execute_tool customer-orders___get_order_status (214 ms)  <-- tool returned BACKEND_UNAVAILABLE
+        execute_tool customer-orders___get_order_status (181 ms)  <-- tool returned BACKEND_UNAVAILABLE
+      execute_event_loop_cycle (1436 ms)
+        chat (1361 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1358 ms)
+    POST (340 ms)
+    POST (212 ms)
+    POST (177 ms)
 
-Summary: error spans 0, tool errors 3, retries 2, loop guard blocks 0, failed requests 0
+Summary: error spans 0, tool errors 3, retries 2, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 0
+
+===== Trace of drill: Crashing backend =====
+Session session-drill-crash-80da9645-1f0e-4a53-a5be-6026de65c2b4: 35 spans
+
+Trace 6b05ce3b339e574a1b2091a33a2e09c0
+  POST /invocations (5137 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (75 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    POST (76 ms)
+    POST (75 ms)
+    POST (151 ms)
+    invoke_agent Strands Agents (4219 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (164 ms)
+      execute_event_loop_cycle (2256 ms)
+          * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
+          * support.tool_result: retryable=True, error_code=TOOL_ERROR, attempt=1, tool=get_order_status, outcome=error
+          * support.tool_retry: tool=get_order_status, next_attempt=2, delay_s=0.0793826205379134
+          * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
+          * support.tool_result: retryable=True, error_code=TOOL_ERROR, attempt=2, tool=get_order_status, outcome=error
+          * support.tool_retry: tool=get_order_status, next_attempt=3, delay_s=0.060730285358389535
+          * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
+          * support.tool_result: retryable=True, error_code=TOOL_ERROR, attempt=3, tool=get_order_status, outcome=error
+        chat (1285 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1273 ms)
+        execute_tool customer-orders___get_order_status (185 ms)  <-- ERROR An internal error occurred. Please retry later.
+        execute_tool customer-orders___get_order_status (214 ms)  <-- ERROR An internal error occurred. Please retry later.
+        execute_tool customer-orders___get_order_status (203 ms)  <-- ERROR An internal error occurred. Please retry later.
+      execute_event_loop_cycle (1652 ms)
+        chat (1572 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1570 ms)
+    POST (182 ms)
+    POST (211 ms)
+    POST (200 ms)
+
+Summary: error spans 3, tool errors 0, retries 2, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 0
 
 ===== Trace of drill: Polling loop =====
-Session session-drill-loop-161d1101-f1dc-45d8-922f-ed6aea6704fb: 37 spans
+Session session-drill-loop-ddd9e378-55ad-4bfc-a42a-d7473cc93538: 45 spans
 
-Trace 6b058cd915d797922d5a4d5517e23f7d
-  POST /invocations (9238 ms)
-    Bedrock AgentCore.GetResourceOauth2Token (78 ms)
-    mcp tools/list (208 ms)
-    invoke_agent Strands Agents (8354 ms)
-      Bedrock AgentCore.RetrieveMemoryRecords (179 ms)
-      execute_event_loop_cycle (2252 ms)
+Trace 6b05ce49434a6add7db6e80649881b6c
+  POST /invocations (8457 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (89 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    POST (62 ms)
+    POST (53 ms)
+    POST (139 ms)
+    invoke_agent Strands Agents (7556 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (174 ms)
+      execute_event_loop_cycle (1817 ms)
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: attempt=1, tool=get_order_status, outcome=ok
-        chat (1802 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1790 ms)
-        execute_tool customer-orders___get_order_status (226 ms)
-          mcp tools/call customer-orders___get_order_status (225 ms)
-      execute_event_loop_cycle (2462 ms)
+        chat (1387 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1374 ms)
+        execute_tool customer-orders___get_order_status (207 ms)
+      execute_event_loop_cycle (1686 ms)
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.tool_result: attempt=1, tool=get_order_status, outcome=ok
-        chat (2016 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (2015 ms)
-        execute_tool customer-orders___get_order_status (217 ms)
-          mcp tools/call customer-orders___get_order_status (216 ms)
-      execute_event_loop_cycle (1498 ms)
+        chat (1253 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1252 ms)
+        execute_tool customer-orders___get_order_status (196 ms)
+      execute_event_loop_cycle (1429 ms)
           * support.tool_call: actor=f450674ef000, customer_id_overridden=False, tool=get_order_status
           * support.loop_guard_blocked: reason=This tool was already called with these arguments. Answer from that result., tool=get_order_status
           * support.tool_result: retryable=False, error_code=TOOL_ERROR, attempt=1, tool=get_order_status, outcome=error
-        chat (1260 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1258 ms)
-      execute_event_loop_cycle (1793 ms)
-        chat (1717 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1713 ms)
+        chat (1195 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1193 ms)
+      execute_event_loop_cycle (2265 ms)
+        chat (2190 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (2186 ms)
+    POST (204 ms)
+    POST (193 ms)
 
-Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 1, failed requests 0
+Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 1, guardrail interventions 0, refunds blocked 0, failed requests 0
 
 ===== Trace of drill: Invalid amount =====
-Session session-drill-invalid-36576541-bce1-4bed-8408-05e690460915: 15 spans
+Session session-drill-invalid-6200930a-bcb6-4d1d-888b-d18e22b7345c: 23 spans
 
-Trace 6b058cf0289f03352a94e0b33b8659af
-  POST /invocations (3927 ms)
-    Bedrock AgentCore.GetResourceOauth2Token (61 ms)
-    mcp tools/list (247 ms)
-    invoke_agent Strands Agents (3082 ms)
-      Bedrock AgentCore.RetrieveMemoryRecords (177 ms)
-      execute_event_loop_cycle (2749 ms)
-        chat (2672 ms)
-          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (2663 ms)
+Trace 6b05ce5e104d602707670d65765af423
+  POST /invocations (2995 ms)
+    Bedrock AgentCore.GetResourceOauth2Token (66 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    PUT (0 ms)
+    GET (0 ms)
+    GET (0 ms)
+    POST (67 ms)
+    POST (57 ms)
+    POST (164 ms)
+    invoke_agent Strands Agents (2029 ms)
+      Bedrock AgentCore.RetrieveMemoryRecords (167 ms)
+      execute_event_loop_cycle (1703 ms)
+        chat (1610 ms)
+          chat us.anthropic.claude-haiku-4-5-20251001-v1:0 (1598 ms)
 
-Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 0, failed requests 0
+Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 0
 
 ===== Trace of drill: Bad session ID =====
+Session drill bad session id with spaces f8414e76-c643-4421-a5d2-5888ffa68a28: 1 spans
 
+Trace 6b05ce6d5c7a78ab781fb2c35c48e463
+  POST /invocations (69 ms)
+      * support.request_failed: error_code=INVALID_REQUEST
+
+Summary: error spans 0, tool errors 0, retries 0, loop guard blocks 0, guardrail interventions 0, refunds blocked 0, failed requests 1
+
+Tested: runtime SupportAgent_default_support_agent-y1BoUz52IG version 19
 Result: 0 failed

@@ -1,9 +1,9 @@
-﻿Gateway tool scenarios, 2026-11-24 05:43:39, signed in as CUST-1001
+﻿Gateway tool scenarios, 2026-11-24 20:53:36, signed in as CUST-1001
 
 [PASS] Agent checks an order (delay reason from DynamoDB)
-  session: session-scenarios-276fcb6e-0672-4302-8cc1-0e3001e7d8a3
+  session: session-scenarios-48a8cc2d-7ecc-4c98-8b0b-5976fa0bbdf3
   payload: {"prompt": "Why is my order 123 delayed?"}
-  reply:   Your order 123 is delayed due to a carrier backlog in warehouse zone 4. 
+  reply:   I'll check the status of your order for you.Your order 123 is delayed due to a carrier backlog in warehouse zone 4. 
 
 Here are the details:
 - Item: Wireless headphones
@@ -11,21 +11,22 @@ Here are the details:
 - Tracking number: 1Z999AA10123456784
 - Estimated delivery: November 28, 2026
 
-You can track your package using the UPS tracking number. I apologize for the delay. Is there anything else I can help you with regarding this order?
+You can track your order using the UPS tracking number. Is there anything else I can help with?
 
 [PASS] Agent retrieves customer information
-  session: session-scenarios-276fcb6e-0672-4302-8cc1-0e3001e7d8a3
+  session: session-scenarios-48a8cc2d-7ecc-4c98-8b0b-5976fa0bbdf3
   payload: {"prompt": "What is my membership tier?"}
-  reply:   Your membership tier is **gold**. You've been a member since March 14, 2021. Is there anything else I can help you with?
+  reply:   I'll look up your account information.Your membership tier is gold. You've been a member since March 14, 2021. Is there anything else I can help you with?
 
 [PASS] Another customer's order is not revealed
-  session: session-foreign-13062d31-62c0-455a-bbe0-73898bee95d7
+  session: session-foreign-d6069570-f9f6-49c5-9431-f03dcd8f762a
   payload: {"prompt": "What is the status of order 125?"}
-  reply:   I'll look up the status of order 125 for you.I don't have an order 125 on record for your account. Could you double-check the order number? If you need help finding your order, I can look up your account details or you can provide the correct order ID.
+  reply:   I'll look up the status of order 125 for you.I don't see an order 125 on your account. Could you double-check the order ID? If you're looking for a specific order, I can help you find its status once you have the correct order number.
 
 [PASS] Agent processes a small refund
-  session: session-refund-4bcf7eed-f0ee-4cc1-9875-cb15f49f6bfe
-  payload: {"prompt": "Please refund 5 USD for order 124, the mug arrived chipped. Use idempotency key operation-c9f6b5c4c7a6."}
-  reply:   Done! I've processed a $5 refund for order 124 due to the chipped mug. Your refund ID is RF-66757841B702 and the status is completed. The money should be back in your account soon.
+  session: session-refund-88b433e9-4b86-4071-b979-ef4cfa3ea408
+  payload: {"prompt": "Please refund 5 USD for order 124, the mug arrived chipped."}
+  reply:   I'll process a $5 refund for order 124 due to the chipped mug.Done! Your $5 refund for order 124 has been completed. The refund ID is RF-1F1B162D2ECE. I'm sorry to hear the mug arrived chipped - I hope the replacement serves you better.
 
+Tested: runtime SupportAgent_default_support_agent-y1BoUz52IG version 18
 Result: 0 failed

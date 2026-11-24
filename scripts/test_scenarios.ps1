@@ -16,9 +16,9 @@ Write-Log ""
 
 $session = New-SessionId "scenarios"
 
-Assert-Reply "Agent checks an order (delay reason from DynamoDB)" $session '{"prompt": "Why is my order 123 delayed?"}' { param($r) $r -match "warehouse zone 4" }
+Assert-Reply "Agent checks an order (delay reason from DynamoDB)" $session '{"prompt": "Why is my order 123 delayed?"}' { param($r) ($r -match "warehouse zone 4") -and (Test-NoPromise $r) }
 Assert-Reply "Agent retrieves customer information" $session '{"prompt": "What is my membership tier?"}' { param($r) $r -match "gold" }
 Assert-Reply "Another customer's order is not revealed" (New-SessionId "foreign") '{"prompt": "What is the status of order 125?"}' { param($r) -not ($r -match "1299|1,299|laptop|FedEx") }
-Assert-Reply "Agent processes a small refund" (New-SessionId "refund") "{`"prompt`": `"Please refund 5 USD for order 124, the mug arrived chipped.`"}" { param($r) $r -match "RF-|refund(ed)?" -and -not $r.StartsWith("ERROR") }
+Assert-Reply "Agent processes a small refund" (New-SessionId "refund") "{`"prompt`": `"Please refund 5 USD for order 124, the mug arrived chipped.`"}" { param($r) ($r -match "RF-|refund(ed)?") -and (-not $r.StartsWith("ERROR")) -and (Test-NoPromise $r) }
 
 Complete-AgentTest $OutFile
