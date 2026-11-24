@@ -9,6 +9,8 @@ from typing import Any, NamedTuple
 
 # Injected by the AgentCore CLI for the project's "supportMemory" resource.
 MEMORY_ID_ENV = "MEMORY_SUPPORTMEMORY_ID"
+# Remembered context is added to the customer's message inside this XML tag.
+MEMORY_CONTEXT_TAG = "user_context"
 
 
 class Retrieval(NamedTuple):
@@ -46,6 +48,7 @@ def memory_session_manager(session_id: str, actor_id: str) -> Any | None:
             namespace: RetrievalConfig(top_k=r.top_k, relevance_score=r.min_relevance)
             for namespace, r in retrieval_namespaces(actor_id).items()
         },
+        context_tag=MEMORY_CONTEXT_TAG,
         # Old tool results are not replayed; order data is always fetched fresh from DynamoDB.
         filter_restored_tool_context=True,
     )

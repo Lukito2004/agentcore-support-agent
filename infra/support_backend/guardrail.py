@@ -1,3 +1,4 @@
+from aws_cdk import RemovalPolicy
 from aws_cdk import aws_bedrock as bedrock
 from aws_cdk import aws_iam as iam
 from constructs import Construct
@@ -11,13 +12,16 @@ APPLY_POLICY_NAME = "support-agent-apply-guardrail"
 # Secrets a support chat never needs: blocked when typed in, masked if they ever come out.
 SECRET_TYPES = (
     "CREDIT_DEBIT_CARD_NUMBER",
-    "CREDIT_DEBIT_CARD_CVV",
-    "US_BANK_ACCOUNT_NUMBER",
     "US_SOCIAL_SECURITY_NUMBER",
     "PASSWORD",
     "AWS_ACCESS_KEY",
     "AWS_SECRET_KEY",
 )
+# Blocked when typed in only: in replies it matches tracking numbers, and any masking ends
+# the model's turn before its tool calls run.
+INPUT_ONLY_SECRET_TYPES = ("US_BANK_ACCOUNT_NUMBER",)
+# CREDIT_DEBIT_CARD_CVV is left out on purpose: it flagged 3-digit order IDs such as "order 124"
+# and blocked normal refund requests. A CVV is useless without the card number, which is blocked.
 HARMFUL_CONTENT_TYPES = ("HATE", "INSULTS", "SEXUAL", "VIOLENCE", "MISCONDUCT")
 
 
@@ -44,6 +48,11 @@ class SupportGuardrail(Construct):
                 type=kind, action="BLOCK", input_action="BLOCK", output_action="ANONYMIZE"
             )
             for kind in SECRET_TYPES
+        ] + [
+            bedrock.CfnGuardrail.PiiEntityConfigProperty(
+                type=kind, action="BLOCK", input_action="BLOCK", output_action="NONE"
+            )
+            for kind in INPUT_ONLY_SECRET_TYPES
         ]
 
         self.guardrail = bedrock.CfnGuardrail(
@@ -67,8 +76,10 @@ class SupportGuardrail(Construct):
             self,
             "Version",
             guardrail_identifier=self.guardrail.attr_guardrail_id,
-            description="v1: prompt attack HIGH, harmful content MEDIUM, secrets blocked",
+            description="v3: no CVV detection, no bank account masking in replies",
         )
+        # A new description publishes a new version; older ones are kept for rollback.
+        self.version.apply_removal_policy(RemovalPolicy.RETAIN)
 
         # Attached to the agent's runtime role; allows applying this guardrail and nothing else.
         self.apply_policy = iam.ManagedPolicy(

@@ -15,13 +15,18 @@ class ReadTools(Construct):
         *,
         customers: dynamodb.ITableV2,
         orders: dynamodb.ITableV2,
+        fault_injection: bool = False,
     ) -> None:
         super().__init__(scope, construct_id)
+        environment = {"CUSTOMERS_TABLE": customers.table_name, "ORDERS_TABLE": orders.table_name}
+        if fault_injection:
+            # Drill orders 900-902 misbehave; see backend/common/faults.py.
+            environment["FAULT_INJECTION"] = "enabled"
         self.function = backend_function(
             self,
             "Read-only support tools: get_customer, get_order_status",
             "read_tools.handler.lambda_handler",
-            {"CUSTOMERS_TABLE": customers.table_name, "ORDERS_TABLE": orders.table_name},
+            environment,
         )
 
         # Least privilege: only the read calls the tools make (no Scan), on these two tables.

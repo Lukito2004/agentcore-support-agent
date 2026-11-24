@@ -1,6 +1,6 @@
 """Read-only business tools, invoked by AgentCore Gateway as a Lambda target."""
 
-from common import dynamo
+from common import dynamo, faults
 from common.dispatch import Tool, run_tool
 from common.errors import ToolError
 from common.log import get_logger
@@ -42,6 +42,8 @@ def get_customer(args: dict) -> dict:
 def get_order_status(args: dict) -> dict:
     customer_id = require_id(args, "customer_id", CUSTOMER_ID_PATTERN)
     order_id = require_id(args, "order_id", ORDER_ID_PATTERN)
+    if (drill_order := faults.inject(customer_id, order_id)) is not None:
+        return drill_order
     item = dynamo.get_item("ORDERS_TABLE", {"order_id": order_id})
     # Same answer for "missing" and "someone else's", so order IDs cannot be probed.
     if item is None or item["customer_id"] != customer_id:

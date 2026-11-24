@@ -3,6 +3,7 @@ from constructs import Construct
 
 from support_backend.approval import RefundApproval
 from support_backend.data import BusinessTables
+from support_backend.evaluators import RefundArgumentsEvaluator
 from support_backend.guardrail import SupportGuardrail
 from support_backend.identity import UserIdentity
 from support_backend.tools import ReadTools, RefundTool
@@ -17,7 +18,15 @@ class SupportAgentBackendStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         tables = BusinessTables(self, "Tables")
-        read_tools = ReadTools(self, "ReadTools", customers=tables.customers, orders=tables.orders)
+        # Off unless deployed with: cdk deploy -c fault_injection=enabled
+        fault_injection = self.node.try_get_context("fault_injection") == "enabled"
+        read_tools = ReadTools(
+            self,
+            "ReadTools",
+            customers=tables.customers,
+            orders=tables.orders,
+            fault_injection=fault_injection,
+        )
         approval = RefundApproval(
             self,
             "RefundApproval",
@@ -37,6 +46,7 @@ class SupportAgentBackendStack(Stack):
         )
         identity = UserIdentity(self, "Identity")
         guardrail = SupportGuardrail(self, "Guardrail")
+        refund_evaluator = RefundArgumentsEvaluator(self, "RefundArgumentsEvaluator")
 
         # Scripts and the AgentCore config read these instead of hardcoding names.
         outputs = {
@@ -58,6 +68,8 @@ class SupportAgentBackendStack(Stack):
             "ApprovalStateMachineArn": approval.state_machine.state_machine_arn,
             "ApprovalTopicArn": approval.topic.topic_arn,
             "ApprovalTimeoutMinutes": str(approval.timeout_minutes),
+            "FaultInjection": "enabled" if fault_injection else "disabled",
+            "RefundArgumentsEvaluatorArn": refund_evaluator.function.function_arn,
         }
         for name, value in outputs.items():
             CfnOutput(self, name, value=value)

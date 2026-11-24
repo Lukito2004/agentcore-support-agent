@@ -1,0 +1,12 @@
+# Local use only: bound to this machine, with cross-site request protection on.
+[server]
+address = "127.0.0.1"
+headless = true
+enableXsrfProtection = true
+enableCORS = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

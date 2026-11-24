@@ -10,9 +10,26 @@
       "entrypoint": "main.py",
       "codeLocation": "app/support_agent",
       "runtimeVersion": "PYTHON_3_14",
+      "envVars": [
+        {
+          "name": "GUARDRAIL_ID",
+          "value": "he2k0mepju88"
+        },
+        {
+          "name": "GUARDRAIL_VERSION",
+          "value": "3"
+        },
+        {
+          "name": "OTEL_PYTHON_DISABLED_INSTRUMENTATIONS",
+          "value": "aws_mcp"
+        }
+      ],
       "protocol": "HTTP",
       "requestHeaderAllowlist": [
         "Authorization"
+      ],
+      "additionalPolicies": [
+        "arn:aws:iam::230858577630:policy/support-agent-apply-guardrail"
       ],
       "authorizerType": "CUSTOM_JWT",
       "authorizerConfiguration": {
@@ -22,20 +39,7 @@
             "1cmf12kmhm73b170sp9re1rneh"
           ]
         }
-      },
-      "envVars": [
-        {
-          "name": "GUARDRAIL_ID",
-          "value": "he2k0mepju88"
-        },
-        {
-          "name": "GUARDRAIL_VERSION",
-          "value": "1"
-        }
-      ],
-      "additionalPolicies": [
-        "arn:aws:iam::230858577630:policy/support-agent-apply-guardrail"
-      ]
+      }
     }
   ],
   "memories": [
@@ -66,7 +70,20 @@
       ]
     }
   ],
-  "evaluators": [],
+  "evaluators": [
+    {
+      "name": "refund_arguments",
+      "level": "TOOL_CALL",
+      "description": "Checks refund_customer arguments in traces",
+      "config": {
+        "codeBased": {
+          "external": {
+            "lambdaArn": "arn:aws:lambda:us-east-1:230858577630:function:SupportAgentBackend-RefundArgumentsEvaluatorFuncti-fPRGAM1uXytP"
+          }
+        }
+      }
+    }
+  ],
   "onlineEvalConfigs": [],
   "agentCoreGateways": [
     {
