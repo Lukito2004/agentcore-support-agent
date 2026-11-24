@@ -5,17 +5,18 @@ from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 
 from caller import AuthError, SessionRegistry, caller_from_headers
+from gateway import connect_from_env
+from hooks import CustomerBindingHook
 from model.load import load_model
 from prompts import build_system_prompt
 from validation import InvalidRequestError, validate_payload
-
-# Business tools are not wired in yet; they will come from AgentCore Gateway over MCP.
-TOOLS: list = []
 
 # Keeps the last N messages so a long session cannot overflow the model context.
 CONVERSATION_WINDOW = 20
 
 sessions = SessionRegistry()
+# Business tools come from AgentCore Gateway over MCP; None under `agentcore dev`.
+gateway = connect_from_env()
 
 
 def _error(code: str, message: str) -> dict:
@@ -31,7 +32,8 @@ def _get_agent(session_id: str, actor_id: str, customer_id: str) -> Agent:
     return Agent(
         model=load_model(),
         system_prompt=build_system_prompt(customer_id),
-        tools=TOOLS,
+        tools=[gateway.client] if gateway else [],
+        hooks=[CustomerBindingHook(customer_id)],
         conversation_manager=SlidingWindowConversationManager(window_size=CONVERSATION_WINDOW),
     )
 
@@ -66,6 +68,14 @@ def create_app() -> BedrockAgentCoreApp:
             yield _error("INVALID_REQUEST", str(exc))
             return
 
+        if gateway:
+            try:
+                await gateway.token.ensure_fresh()
+            except Exception:
+                log.exception("Could not get a Gateway token in session %s", session_id)
+                yield _error("TOOLS_UNAVAILABLE", "support tools are unavailable, please retry")
+                return
+
         # Log metadata only; prompts can contain personal data.
         log.info(
             "Invoking agent: session=%s actor=%s prompt_chars=%d",
@@ -73,8 +83,8 @@ def create_app() -> BedrockAgentCoreApp:
             caller.log_id,
             len(prompt),
         )
-        agent = _get_agent(session_id, caller.actor_id, caller.customer_id)
         try:
+            agent = _get_agent(session_id, caller.actor_id, caller.customer_id)
             async for event in agent.stream_async(prompt):
                 if not isinstance(event, dict) or "event" not in event:
                     continue
