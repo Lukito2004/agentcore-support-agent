@@ -22,7 +22,20 @@
             "1cmf12kmhm73b170sp9re1rneh"
           ]
         }
-      }
+      },
+      "envVars": [
+        {
+          "name": "GUARDRAIL_ID",
+          "value": "he2k0mepju88"
+        },
+        {
+          "name": "GUARDRAIL_VERSION",
+          "value": "1"
+        }
+      ],
+      "additionalPolicies": [
+        "arn:aws:iam::230858577630:policy/support-agent-apply-guardrail"
+      ]
     }
   ],
   "memories": [

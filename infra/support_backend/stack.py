@@ -2,12 +2,13 @@ from aws_cdk import CfnOutput, Stack
 from constructs import Construct
 
 from support_backend.data import BusinessTables
+from support_backend.guardrail import SupportGuardrail
 from support_backend.identity import UserIdentity
 from support_backend.tools import ReadTools, RefundTool
 
 
 class SupportAgentBackendStack(Stack):
-    """Business APIs the agent reaches through AgentCore Gateway, plus user identity."""
+    """Business APIs the agent reaches through AgentCore Gateway, user identity and guardrail."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -16,6 +17,7 @@ class SupportAgentBackendStack(Stack):
         read_tools = ReadTools(self, "ReadTools", customers=tables.customers, orders=tables.orders)
         refund_tool = RefundTool(self, "RefundTool", orders=tables.orders, refunds=tables.refunds)
         identity = UserIdentity(self, "Identity")
+        guardrail = SupportGuardrail(self, "Guardrail")
 
         # Scripts and the AgentCore config read these instead of hardcoding names.
         outputs = {
@@ -31,6 +33,9 @@ class SupportAgentBackendStack(Stack):
             "ChatClientId": identity.chat_client.user_pool_client_id,
             "GatewayClientId": identity.gateway_client.user_pool_client_id,
             "TokenEndpoint": identity.token_endpoint,
+            "GuardrailId": guardrail.guardrail.attr_guardrail_id,
+            "GuardrailVersion": guardrail.version.attr_version,
+            "ApplyGuardrailPolicyArn": guardrail.apply_policy.managed_policy_arn,
         }
         for name, value in outputs.items():
             CfnOutput(self, name, value=value)
